@@ -11,9 +11,8 @@
     <!-- FontAwesome para Ícones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Leaflet.js para Mapa Interativo -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Google Maps API JavaScript (Substitua SUA_CHAVE_API_AQUI pela sua chave da Google Cloud) -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=SUA_CHAVE_API_AQUI&callback=initMap" async defer></script>
 </head>
 <body>
 
@@ -69,9 +68,9 @@
             <!-- Grelha de Prestadores -->
             <div id="container-cards" class="cards-grid"></div>
 
-            <!-- Contentor do Mapa -->
+            <!-- Contentor do Mapa (Google Maps) -->
             <div id="map-container" class="map-hidden">
-                <div id="map"></div>
+                <div id="map" style="width: 100%; height: 100%;"></div>
             </div>
         </section>
 
@@ -82,7 +81,6 @@
                 <button id="btn-novo-grito" class="btn-primary"><i class="fa-solid fa-plus"></i> Publicar Grito</button>
             </div>
             
-            <!-- Formulário Dinâmico de Novo Grito -->
             <form id="form-novo-grito" class="form-box" style="display: none; margin-bottom: 25px;">
                 <h3>Novo Pedido de Serviço</h3>
                 <label>Título do Pedido</label>
@@ -139,7 +137,7 @@
         </section>
     </main>
 
-    <!-- MODAL DE LOGIN (COMUM E ADMINISTRADOR) -->
+    <!-- MODAL DE LOGIN -->
     <div id="modal-login" class="modal">
         <div class="modal-content">
             <span class="close-modal" id="btn-fechar-modal">&times;</span>
