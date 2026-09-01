@@ -1,5 +1,5 @@
 /**
- * Huambo Plus — Aplicação Principal
+ * Huambo Plus — Aplicação Principal (Cliente API)
  */
 
 // --- Dados Globais e Constantes ---
@@ -97,13 +97,9 @@ const TRADUCOES = {
     }
 };
 
-// --- Base de Dados Simulada ---
-let prestadores = [
-    { id: 1, nome: "Aires Festo", profissao: "Técnico de Informática", municipio: "Huambo", taxa: 1500, lat: -12.7761, lng: 15.7392 },
-    { id: 2, nome: "Manuel Silva", profissao: "Canalizador", municipio: "Caála", taxa: 2000, lat: -12.8525, lng: 15.5603 },
-    { id: 3, nome: "João Pedro", profissao: "Eletricista", municipio: "Bailundo", taxa: 2500, lat: -12.1953, lng: 15.8656 }
-];
-
+// Estados globais da aplicação
+let listaPrestadores = [];
+let listaGritos = [];
 let posicaoUsuario = null;
 let mapaInstancia = null;
 let marcadoresMapa = [];
@@ -111,35 +107,90 @@ let marcadoresMapa = [];
 // --- Inicialização ---
 document.addEventListener("DOMContentLoaded", () => {
     popularSelects();
-    renderizarPrestadores(prestadores);
+    carregarPrestadores();
+    carregarGritos();
     configurarEventos();
     obterGeolocalizacao();
 });
 
-// --- Preenchimento Dinâmico de Selects ---
+// --- Preenchimento Dinâmico dos Selects ---
 function popularSelects() {
     const selectMunFiltro = document.getElementById("filtro-municipio");
     const selectMunRegisto = document.getElementById("reg-municipio");
     const selectCatFiltro = document.getElementById("filtro-categoria");
     const selectCatRegisto = document.getElementById("reg-categoria");
 
-    MUNICIPIOS.forEach(m => {
-        selectMunFiltro.appendChild(new Option(m, m));
-        selectMunRegisto.appendChild(new Option(m, m));
-    });
-
-    Object.keys(CATEGORIAS).forEach(cat => {
-        selectCatFiltro.appendChild(new Option(cat, cat));
-        
-        CATEGORIAS[cat].forEach(sub => {
-            selectCatRegisto.appendChild(new Option(`${cat} - ${sub}`, sub));
+    if (selectMunFiltro && selectMunRegisto) {
+        MUNICIPIOS.forEach(m => {
+            selectMunFiltro.appendChild(new Option(m, m));
+            selectMunRegisto.appendChild(new Option(m, m));
         });
-    });
+    }
+
+    if (selectCatFiltro && selectCatRegisto) {
+        Object.keys(CATEGORIAS).forEach(cat => {
+            selectCatFiltro.appendChild(new Option(cat, cat));
+            CATEGORIAS[cat].forEach(sub => {
+                selectCatRegisto.appendChild(new Option(`${cat} - ${sub}`, sub));
+            });
+        });
+    }
 }
 
-// --- Renderização dos Cards ---
+// --- Chamadas à API (Fetch Backend/Supabase) ---
+
+// 1. Carregar Prestadores
+async function carregarPrestadores() {
+    try {
+        const resposta = await fetch('/api/prestadores');
+        if (!resposta.ok) throw new Error("Erro na requisição dos prestadores");
+        
+        listaPrestadores = await resposta.json();
+        renderizarPrestadores(listaPrestadores);
+    } catch (erro) {
+        console.error("Erro ao carregar prestadores:", erro);
+    }
+}
+
+// 2. Carregar Gritos
+async function carregarGritos() {
+    try {
+        const resposta = await fetch('/api/gritos');
+        if (!resposta.ok) throw new Error("Erro na requisição dos gritos");
+        
+        listaGritos = await resposta.json();
+        renderizarGritos(listaGritos);
+    } catch (erro) {
+        console.error("Erro ao carregar gritos:", erro);
+    }
+}
+
+// 3. Cadastrar Prestador
+async function cadastrarPrestador(dadosForm) {
+    try {
+        const resposta = await fetch('/api/prestadores', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dadosForm)
+        });
+
+        const resultado = await resposta.json();
+        if (!resposta.ok) throw new Error(resultado.error || "Erro ao efetuar registo");
+
+        alert("Candidatura submetida com sucesso!");
+        document.getElementById("form-prestador").reset();
+        carregarPrestadores();
+    } catch (erro) {
+        alert(`Falha no registo: ${erro.message}`);
+    }
+}
+
+// --- Renderização de Componentes ---
+
 function renderizarPrestadores(lista) {
     const container = document.getElementById("container-cards");
+    if (!container) return;
+
     container.innerHTML = "";
 
     if (lista.length === 0) {
@@ -154,13 +205,39 @@ function renderizarPrestadores(lista) {
             <h3>${p.nome}</h3>
             <span class="card-badge">${p.profissao}</span>
             <p><i class="fa-solid fa-location-dot"></i> ${p.municipio}</p>
-            <p><i class="fa-solid fa-money-bill"></i> Taxa: ${p.taxa} Kz</p>
+            <p><i class="fa-solid fa-money-bill"></i> Taxa: ${p.taxa_deslocacao || 0} Kz</p>
+            <p><i class="fa-solid fa-phone"></i> ${p.telefone}</p>
         `;
         container.appendChild(card);
     });
 }
 
-// --- Lógica de Busca Inteligente ---
+function renderizarGritos(lista) {
+    const container = document.getElementById("container-gritos");
+    if (!container) return;
+
+    container.innerHTML = "";
+
+    if (lista.length === 0) {
+        container.innerHTML = `<p style="text-align: center;">Nenhum pedido publicado no momento.</p>`;
+        return;
+    }
+
+    lista.forEach(g => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.style.marginBottom = "12px";
+        card.innerHTML = `
+            <h3>${g.titulo}</h3>
+            <p>${g.descricao}</p>
+            <p><strong>Município:</strong> ${g.municipio} | <strong>Orçamento:</strong> ${g.orcamento || 'A combinar'} Kz</p>
+            <p><i class="fa-solid fa-phone"></i> Contacto: ${g.contacto}</p>
+        `;
+        container.appendChild(card);
+    });
+}
+
+// --- Motor de Busca Dinâmico ---
 function executarBusca() {
     const termo = document.getElementById("campo-busca").value.toLowerCase().trim();
     const municipio = document.getElementById("filtro-municipio").value;
@@ -168,10 +245,10 @@ function executarBusca() {
 
     let termoExpanso = SINONIMOS_BUSCA[termo] || termo;
 
-    const resultados = prestadores.filter(p => {
+    const resultados = listaPrestadores.filter(p => {
         const correspondeTermo = !termo || p.profissao.toLowerCase().includes(termoExpanso) || p.nome.toLowerCase().includes(termoExpanso);
         const correspondeMunicipio = !municipio || p.municipio === municipio;
-        const correspondeCategoria = !categoria || Object.keys(CATEGORIAS).some(catKey => catKey === categoria && CATEGORIAS[catKey].includes(p.profissao));
+        const correspondeCategoria = !categoria || p.categoria === categoria || Object.keys(CATEGORIAS).some(catKey => catKey === categoria && CATEGORIAS[catKey].includes(p.profissao));
 
         return correspondeTermo && correspondeMunicipio && correspondeCategoria;
     });
@@ -193,7 +270,7 @@ function inicializarMapa() {
         attribution: '© OpenStreetMap contributors'
     }).addTo(mapaInstancia);
 
-    atualizarMarcadoresMapa(prestadores);
+    atualizarMarcadoresMapa(listaPrestadores);
 }
 
 function atualizarMarcadoresMapa(lista) {
@@ -220,7 +297,7 @@ function obterGeolocalizacao() {
                     lng: pos.coords.longitude
                 };
             },
-            (err) => console.warn("Geolocalização não permitida pelo utilizador.")
+            (err) => console.warn("Aviso de geolocalização:", err.message)
         );
     }
 }
@@ -241,59 +318,96 @@ function alterarIdioma(lang) {
     });
 }
 
-// --- Manipulação de Eventos ---
+// --- Configuração de Eventos do DOM ---
 function configurarEventos() {
-    // Navegação por Abas
+    // Alternância de Abas
     document.querySelectorAll(".nav-btn").forEach(btn => {
         btn.addEventListener("click", () => {
             document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
             document.querySelectorAll(".tab-content").forEach(tc => tc.classList.remove("active"));
 
             btn.classList.add("active");
-            document.getElementById(`aba-${btn.dataset.tab}`).classList.add("active");
+            const aba = document.getElementById(`aba-${btn.dataset.tab}`);
+            if (aba) aba.classList.add("active");
         });
     });
 
-    // Alternar Visualização (Cards / Mapa)
+    // Alternar Visualização Cards / Mapa
     const btnCards = document.getElementById("btn-view-cards");
     const btnMap = document.getElementById("btn-view-map");
     const containerCards = document.getElementById("container-cards");
     const containerMap = document.getElementById("map-container");
 
-    btnCards.addEventListener("click", () => {
-        btnCards.classList.add("active");
-        btnMap.classList.remove("active");
-        containerCards.style.display = "grid";
-        containerMap.classList.add("map-hidden");
-    });
+    if (btnCards && btnMap) {
+        btnCards.addEventListener("click", () => {
+            btnCards.classList.add("active");
+            btnMap.classList.remove("active");
+            containerCards.style.display = "grid";
+            containerMap.classList.add("map-hidden");
+        });
 
-    btnMap.addEventListener("click", () => {
-        btnMap.classList.add("active");
-        btnCards.classList.remove("active");
-        containerCards.style.display = "none";
-        containerMap.classList.remove("map-hidden");
-        inicializarMapa();
-        setTimeout(() => mapaInstancia.invalidateSize(), 200);
-    });
+        btnMap.addEventListener("click", () => {
+            btnMap.classList.add("active");
+            btnCards.classList.remove("active");
+            containerCards.style.display = "none";
+            containerMap.classList.remove("map-hidden");
+            inicializarMapa();
+            setTimeout(() => mapaInstancia.invalidateSize(), 200);
+        });
+    }
 
-    // Eventos de Busca
-    document.getElementById("btn-executar-busca").addEventListener("click", executarBusca);
+    // Formulário de Registo de Prestador
+    const formPrestador = document.getElementById("form-prestador");
+    if (formPrestador) {
+        formPrestador.addEventListener("submit", (e) => {
+            e.preventDefault();
+            
+            const categoriaValor = document.getElementById("reg-categoria").value;
+            const partesCat = categoriaValor.split(" - ");
 
-    // Evento de Idioma
-    document.getElementById("seletor-idioma").addEventListener("change", (e) => {
-        alterarIdioma(e.target.value);
-    });
+            const dados = {
+                nome: document.getElementById("reg-nome").value,
+                nif: document.getElementById("reg-nif").value,
+                categoria: partesCat[0] || categoriaValor,
+                profissao: partesCat[1] || categoriaValor,
+                municipio: document.getElementById("reg-municipio").value,
+                telefone: document.getElementById("reg-telefone").value,
+                taxa: parseFloat(document.getElementById("reg-taxa").value) || 0,
+                lat: posicaoUsuario ? posicaoUsuario.lat : null,
+                lng: posicaoUsuario ? posicaoUsuario.lng : null
+            };
 
-    // Evento de Modo Escuro/Claro
-    document.getElementById("btn-tema").addEventListener("click", () => {
-        const temaAtual = document.documentElement.getAttribute("data-theme");
-        const novoTema = temaAtual === "dark" ? "light" : "dark";
-        document.documentElement.setAttribute("data-theme", novoTema);
-    });
+            cadastrarPrestador(dados);
+        });
+    }
 
-    // Controlo dos Modais
+    // Executar Pesquisa
+    const btnPesquisar = document.getElementById("btn-executar-busca");
+    if (btnPesquisar) btnPesquisar.addEventListener("click", executarBusca);
+
+    // Idioma
+    const seletorIdioma = document.getElementById("seletor-idioma");
+    if (seletorIdioma) seletorIdioma.addEventListener("change", (e) => alterarIdioma(e.target.value));
+
+    // Tema
+    const btnTema = document.getElementById("btn-tema");
+    if (btnTema) {
+        btnTema.addEventListener("click", () => {
+            const temaAtual = document.documentElement.getAttribute("data-theme");
+            const novoTema = temaAtual === "dark" ? "light" : "dark";
+            document.documentElement.setAttribute("data-theme", novoTema);
+        });
+    }
+
+    // Modal de Login
     const modalLogin = document.getElementById("modal-login");
-    document.getElementById("btn-login-modal").addEventListener("click", () => modalLogin.style.display = "flex");
-    document.querySelector(".close-modal").addEventListener("click", () => modalLogin.style.display = "none");
-        }
-        
+    const btnLoginModal = document.getElementById("btn-login-modal");
+    const closeModal = document.querySelector(".close-modal");
+
+    if (btnLoginModal && modalLogin) {
+        btnLoginModal.addEventListener("click", () => modalLogin.style.display = "flex");
+    }
+    if (closeModal && modalLogin) {
+        closeModal.addEventListener("click", () => modalLogin.style.display = "none");
+    }
+}
