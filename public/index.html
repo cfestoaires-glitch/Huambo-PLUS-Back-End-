@@ -4,42 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Huambo Plus</title>
-    
-    <!-- Biblioteca oficial do Supabase (Obrigatória para o app.js funcionar) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <!-- Podes adicionar os teus estilos CSS aqui ou linkar o teu ficheiro style.css -->
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f8fafc;
-            margin: 0;
-            padding: 0;
-            color: #0f172a;
-        }
-        .tab-content {
-            display: none;
-            padding: 15px;
-        }
-        .tab-content.active {
-            display: block;
-        }
-    </style>
 </head>
-<body>
+<body style="font-family: sans-serif; background: #f8fafc; padding: 20px; text-align: center;">
+    <h1>Huambo Plus - A funcionar!</h1>
+    <div id="aba-registar"></div>
+    <div id="container-cards"></div>
 
-    <!-- Conteúdo principal das abas da aplicação -->
-    <main>
-        <!-- Aba de Registo / Entrada / Escolha de Perfil -->
-        <div id="aba-registar" class="tab-content active"></div>
-
-        <!-- Aba de Pesquisa / Cards de Prestadores -->
-        <div id="aba-buscar" class="tab-content">
-            <div id="container-cards"></div>
-        </div>
-    </main>
-
-    <!-- O teu script principal da aplicação -->
     <script src="app.js"></script>
 </body>
 </html>
