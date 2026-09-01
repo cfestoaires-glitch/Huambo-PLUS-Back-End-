@@ -38,9 +38,9 @@ function forcarLogin() {
 }
 
 // ============================================================
-//  INICIALIZAÇÃO DA APLICAÇÃO (DOM LOADED)
+//  INICIALIZAÇÃO DA APLICAÇÃO (CORRIGIDA)
 // ============================================================
-document.addEventListener('DOMContentLoaded', async function() {
+async function iniciarHuamboPlus() {
     // Timer de segurança: após 2 segundos desativa o carregamento travado
     const timeoutFallback = setTimeout(forcarLogin, 2000);
 
@@ -49,6 +49,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         try {
             supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             console.log('✅ Supabase inicializado com sucesso.');
+            clearTimeout(timeoutFallback);
             await verificarSessao();
         } catch (e) {
             console.error('❌ Erro ao inicializar Supabase:', e);
@@ -58,7 +59,15 @@ document.addEventListener('DOMContentLoaded', async function() {
         console.warn('⚠️ SDK do Supabase não encontrado no HTML. Indo para Login...');
         forcarLogin();
     }
-});
+}
+
+// Garante que corre mesmo que o script carregue DEPOIS do DOMContentLoaded já ter disparado
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', iniciarHuamboPlus);
+} else {
+    // DOM já estava pronto quando o script correu
+    iniciarHuamboPlus();
+}
 
 // ============================================================
 //  SESSÃO E AUTENTICAÇÃO
