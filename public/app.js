@@ -1,511 +1,125 @@
-document.addEventListener('DOMContentLoaded', () => {
-    let map = null;
-    let markersGroup = null;
-
-    // ------------------------------------------------------------------
-    // 1. FÓRMULA DE HAVERSINE (Cálculo preciso de distância em km)
-    // ------------------------------------------------------------------
-    function calcularDistanciaKm(lat1, lon1, lat2, lon2) {
-        const R = 6371;
-        const dLat = (lat2 - lat1) * Math.PI / 180;
-        const dLon = (lon2 - lon1) * Math.PI / 180;
-        const a = 
-            Math.sin(dLat/2) * Math.sin(dLat/2) +
-            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-            Math.sin(dLon/2) * Math.sin(dLon/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        return R * c;
+// Dados Piloto / Exemplo para Prestadores e Empresas
+const dadosPiloto = [
+    {
+        id: "piloto-1",
+        nome: "António Canalizador (Exemplo)",
+        categoria: "Canalizador",
+        municipio: "Huambo",
+        telefone: "+244 923 000 001",
+        taxa: 2000,
+        isPiloto: true,
+        avaliacoes: [
+            { nota: 5, comentario: "Excelente profissional, resolveu a fuga de água muito rápido!" },
+            { nota: 4, comentario: "Bom atendimento e pontualidade." }
+        ]
+    },
+    {
+        id: "piloto-2",
+        nome: "Joaquim Eletricista (Exemplo)",
+        categoria: "Eletricista",
+        municipio: "Caála",
+        telefone: "+244 912 000 002",
+        taxa: 2500,
+        isPiloto: true,
+        avaliacoes: [
+            { nota: 5, comentario: "Instalou o quadro elétrico perfeitamente." },
+            { nota: 5, comentario: "Muito honesto e competente." }
+        ]
+    },
+    {
+        id: "piloto-3",
+        nome: "Prof. Manuel - Explicações (Exemplo)",
+        categoria: "Educação - Explicações",
+        municipio: "Huambo",
+        telefone: "+244 931 000 003",
+        taxa: 0,
+        isPiloto: true,
+        avaliacoes: [
+            { nota: 5, comentario: "Salvou o meu filho a Matemática, recomendo muito!" },
+            { nota: 4, comentario: "Explica com muita calma e clareza." }
+        ]
+    },
+    {
+        id: "piloto-4",
+        nome: "TechHuambo Informática (Exemplo)",
+        categoria: "Tecnologia - Informática",
+        municipio: "Huambo",
+        telefone: "+244 945 000 004",
+        taxa: 1500,
+        isPiloto: true,
+        avaliacoes: [
+            { nota: 5, comentario: "Formatou o meu portátil e deixou a voar." },
+            { nota: 4, comentario: "Bom serviço de reparação e assistência." }
+        ]
     }
+];
 
-    function ordenarPrestadoresPorProximidade(lista, userLat, userLon) {
-        return lista.map(p => {
-            const pLat = parseFloat(p.lat) || -12.7761;
-            const pLon = parseFloat(p.lng) || 15.7392;
-            const distancia = calcularDistanciaKm(userLat, userLon, pLat, pLon);
-            return { ...p, distancia };
-        }).sort((a, b) => a.distancia - b.distancia);
-    }
-
-    // ------------------------------------------------------------------
-    // 2. INICIALIZAÇÃO DO LEAFLET (OPENSTREETMAP)
-    // ------------------------------------------------------------------
-    function inicializarMapa() {
-        const mapDiv = document.getElementById('map');
-        if (mapDiv && typeof L !== 'undefined' && !map) {
-            map = L.map('map').setView([-12.7761, 15.7392], 13);
-            
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                attribution: '© OpenStreetMap'
-            }).addTo(map);
-
-            markersGroup = L.layerGroup().addTo(map);
-        }
-    }
-
-    function adicionarMarcadoresLeaflet(lista) {
-        if (!map) inicializarMapa();
-        if (!markersGroup) return;
-
-        markersGroup.clearLayers();
-        if (!Array.isArray(lista)) return;
-
-        lista.forEach(p => {
-            const lat = parseFloat(p.lat) || -12.7761;
-            const lng = parseFloat(p.lng) || 15.7392;
-
-            const marker = L.marker([lat, lng]);
-            marker.bindPopup(`
-                <div style="color: #000; padding: 2px;">
-                    <strong>${p.nome}</strong><br>
-                    <span>${p.categoria}</span><br>
-                    <small>${p.municipio} ${p.distancia !== undefined ? `(${p.distancia.toFixed(1)} km)` : ''}</small>
-                </div>
-            `);
-            markersGroup.addLayer(marker);
-        });
-    }
-
-    // ------------------------------------------------------------------
-    // 3. ALTERNÂNCIA DE ABAS (Bottom Nav & Top Nav)
-    // ------------------------------------------------------------------
-    const navButtons = document.querySelectorAll('.nav-btn');
-    const tabContents = document.querySelectorAll('.tab-content');
-
-    navButtons.forEach(button => {
-        button.addEventListener('click', (e) => {
-            e.preventDefault();
-            const targetTab = button.getAttribute('data-tab');
-
-            navButtons.forEach(btn => {
-                btn.classList.remove('active');
-                btn.style.color = 'var(--text-muted)';
-            });
-            tabContents.forEach(tab => tab.classList.remove('active'));
-
-            document.querySelectorAll(`[data-tab="${targetTab}"]`).forEach(btn => {
-                btn.classList.add('active');
-                btn.style.color = 'var(--primary-color)';
-            });
-
-            const activeSection = document.getElementById(`aba-${targetTab}`);
-            if (activeSection) {
-                activeSection.classList.add('active');
-            }
-
-            if (targetTab === 'gritos') {
-                carregarGritos();
-            }
-        });
-    });
-
-    // ------------------------------------------------------------------
-    // 4. SELEÇÃO DE CATEGORIAS VISUAIS (Grelha)
-    // ------------------------------------------------------------------
-    const catCards = document.querySelectorAll('.cat-card');
-    const inputCategoria = document.getElementById('filtro-categoria');
-
-    catCards.forEach(card => {
-        card.addEventListener('click', () => {
-            const categoriaSelecionada = card.getAttribute('data-cat');
-            
-            catCards.forEach(c => c.style.borderColor = 'var(--border-color)');
-            
-            if (inputCategoria.value === categoriaSelecionada) {
-                inputCategoria.value = '';
-            } else {
-                inputCategoria.value = categoriaSelecionada;
-                card.style.borderColor = 'var(--primary-color)';
-            }
-            buscarPrestadoresComGPS();
-        });
-    });
-
-    // ------------------------------------------------------------------
-    // 5. ALTERNADOR DE VISUALIZAÇÃO (LISTA / MAPA)
-    // ------------------------------------------------------------------
-    const btnViewCards = document.getElementById('btn-view-cards');
-    const btnViewMap = document.getElementById('btn-view-map');
-    const containerCards = document.getElementById('container-cards');
-    const containerMap = document.getElementById('map-container');
-
-    if (btnViewCards && btnViewMap) {
-        btnViewCards.addEventListener('click', () => {
-            btnViewCards.classList.add('active');
-            btnViewMap.classList.remove('active');
-            containerCards.style.display = 'grid';
-            containerMap.classList.add('map-hidden');
-        });
-
-        btnViewMap.addEventListener('click', () => {
-            btnViewMap.classList.add('active');
-            btnViewCards.classList.remove('active');
-            containerCards.style.display = 'none';
-            containerMap.classList.remove('map-hidden');
-            
-            inicializarMapa();
-            if (map) {
-                setTimeout(() => map.invalidateSize(), 200);
-            }
-        });
-    }
-
-    // ------------------------------------------------------------------
-    // 6. MODAL DE LOGIN E TEMAS
-    // ------------------------------------------------------------------
-    const modalLogin = document.getElementById('modal-login');
-    const btnAbrirModal = document.getElementById('btn-login-modal');
-    const btnFecharModal = document.getElementById('btn-fechar-modal');
-
-    if (btnAbrirModal && modalLogin) {
-        btnAbrirModal.addEventListener('click', () => modalLogin.style.display = 'flex');
-    }
-    if (btnFecharModal && modalLogin) {
-        btnFecharModal.addEventListener('click', () => modalLogin.style.display = 'none');
-    }
-    window.addEventListener('click', (e) => {
-        if (e.target === modalLogin) modalLogin.style.display = 'none';
-    });
-
-    const btnTema = document.getElementById('btn-tema');
-    if (btnTema) {
-        btnTema.addEventListener('click', () => {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', newTheme);
-            btnTema.innerHTML = newTheme === 'dark' ? '<i class="fa-solid fa-moon"></i>' : '<i class="fa-solid fa-sun"></i>';
-        });
-    }
-
-    // ------------------------------------------------------------------
-    // 7. PESQUISA INTELIGENTE COM SINÓNIMOS MASSIVOS E ORDENAÇÃO GPS
-    // ------------------------------------------------------------------
-    const btnBusca = document.getElementById('btn-executar-busca');
-    const campoBusca = document.getElementById('campo-busca');
-
-    const dicionarioSinonimos = {
-        // --- CANALIZAÇÃO ---
-        "encanador": "Canalizador",
-        "canalizador": "Canalizador",
-        "torneira": "Canalizador",
-        "fuga": "Canalizador",
-        "cano": "Canalizador",
-        "tubo": "Canalizador",
-        "esgoto": "Canalizador",
-        "sanita": "Canalizador",
-        "pia": "Canalizador",
-        "vazamento": "Canalizador",
-        "água": "Canalizador",
-
-        // --- ELETRICISTA ---
-        "eletricista": "Eletricista",
-        "luz": "Eletricista",
-        "eletricidade": "Eletricista",
-        "corrente": "Eletricista",
-        "curto-circuito": "Eletricista",
-        "disjuntor": "Eletricista",
-        "tomada": "Eletricista",
-        "lampada": "Eletricista",
-        "lâmpada": "Eletricista",
-        "fio": "Eletricista",
-        "gerador": "Eletricista",
-
-        // --- EXPLICAÇÕES / EDUCAÇÃO ---
-        "professor": "Educação - Explicações",
-        "prof": "Educação - Explicações",
-        "explicador": "Educação - Explicações",
-        "explicações": "Educação - Explicações",
-        "explicacao": "Educação - Explicações",
-        "aulas": "Educação - Explicações",
-        "aula": "Educação - Explicações",
-        "estudo": "Educação - Explicações",
-        "reforço": "Educação - Explicações",
-        "matemática": "Educação - Explicações",
-        "física": "Educação - Explicações",
-        "química": "Educação - Explicações",
-        "português": "Educação - Explicações",
-        "inglês": "Educação - Explicações",
-
-        // --- INFORMÁTICA / TECNOLOGIA ---
-        "informática": "Tecnologia - Informática",
-        "informatica": "Tecnologia - Informática",
-        "computador": "Tecnologia - Informática",
-        "pc": "Tecnologia - Informática",
-        "laptop": "Tecnologia - Informática",
-        "ecrã": "Tecnologia - Informática",
-        "teclado": "Tecnologia - Informática",
-        "impressora": "Tecnologia - Informática",
-        "internet": "Tecnologia - Informática",
-        "formatação": "Tecnologia - Informática",
-        "virus": "Tecnologia - Informática",
-        "técnico": "Tecnologia - Informática",
-
-        // --- OUTROS REPAROS ---
-        "conserto": "reparo",
-        "arranjo": "reparo",
-        "reparos": "reparo",
-        "reparações": "reparo",
-        "pintor": "Pintura",
-        "pintura": "Pintura",
-        "carpinteiro": "Carpintaria",
-        "pedreiro": "Obras",
-        "construção": "Obras",
-        "limpeza": "Limpeza"
-    };
-
-    function expandirTermoComSinonimos(termo) {
-        if (!termo) return "";
-        const termoLimpo = termo.trim().toLowerCase();
-        return dicionarioSinonimos[termoLimpo] || termoLimpo;
-    }
+// Função para renderizar os cartões no ecrã
+function renderizarPrestadores(lista) {
+    const container = document.getElementById("container-cards");
+    if (!container) return;
     
-    async function buscarPrestadoresComGPS() {
-        const inputTexto = campoBusca.value;
-        const termoExpandido = expandirTermoComSinonimos(inputTexto);
-        const municipio = document.getElementById('filtro-municipio').value;
-        const categoria = inputCategoria.value;
+    container.innerHTML = "";
 
-        const url = `/api/prestadores?q=${encodeURIComponent(termoExpandido)}&municipio=${encodeURIComponent(municipio)}&categoria=${encodeURIComponent(categoria)}`;
+    // Se a base de dados estiver vazia, combinamos ou exibimos os pilotos por defeito
+    const itensParaExibir = (!lista || lista.length === 0) ? dadosPiloto : [...dadosPiloto, ...lista];
 
-        try {
-            const res = await fetch(url);
-            let prestadores = await res.json();
-
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const userLat = position.coords.latitude;
-                        const userLon = position.coords.longitude;
-                        prestadores = ordenarPrestadoresPorProximidade(prestadores, userLat, userLon);
-                        renderizarPrestadores(prestadores);
-                    },
-                    () => {
-                        renderizarPrestadores(prestadores);
-                    },
-                    { timeout: 7000, enableHighAccuracy: true }
-                );
-            } else {
-                renderizarPrestadores(prestadores);
-            }
-        } catch (err) {
-            console.error("Erro ao carregar prestadores:", err);
-        }
-    }
-
-    function renderizarPrestadores(lista) {
-        containerCards.innerHTML = '';
-
-        if (!Array.isArray(lista) || lista.length === 0) {
-            containerCards.innerHTML = '<p style="grid-column: 1/-1; text-align: center; opacity: 0.7;">Nenhum prestador encontrado.</p>';
-            if (markersGroup) markersGroup.clearLayers();
-            return;
+    itensParaExibir.forEach(p => {
+        const badgeHtml = p.isPiloto ? `<span class="badge-piloto"><i class="fa-solid fa-star"></i> Perfil Piloto / Exemplo</span>` : '';
+        
+        let avaliacoesHtml = '';
+        if (p.avaliacoes && p.avaliacoes.length > 0) {
+            avaliacoesHtml = `<div style="margin-top: 8px; font-size: 0.8rem; border-top: 1px solid var(--border-color); padding-top: 6px;">
+                <strong>Avaliações (${p.avaliacoes.length}):</strong>
+                <ul style="padding-left: 15px; margin-top: 4px; color: var(--text-muted);">
+                    ${p.avaliacoes.map(a => `<li>⭐ ${a.nota}/5 - "${a.comentario}"</li>`).join('')}
+                </ul>
+            </div>`;
         }
 
-        lista.forEach(p => {
-            const card = document.createElement('div');
-            card.className = 'card-prestador';
-            const distanciaTexto = p.distancia !== undefined ? `<p><strong><i class="fa-solid fa-route"></i> Distância:</strong> ${p.distancia.toFixed(1)} km</p>` : '';
-            
-            card.innerHTML = `
-                <div>
-                    <h3>${p.nome}</h3>
-                    <p><strong><i class="fa-solid fa-briefcase"></i> Profissão:</strong> ${p.categoria}</p>
-                    <p><strong><i class="fa-solid fa-location-dot"></i> Município:</strong> ${p.municipio}</p>
-                    ${distanciaTexto}
-                    <p><strong><i class="fa-solid fa-tag"></i> Deslocação:</strong> ${p.taxa_deslocacao || p.taxa || 0} Kz</p>
-                </div>
-                <a href="https://wa.me/${p.telefone ? p.telefone.replace(/\D/g,'') : ''}" target="_blank" class="btn-primary" style="display: block; margin-top: 15px; text-decoration: none; text-align: center;">
-                    <i class="fa-brands fa-whatsapp"></i> Contactar
-                </a>
-            `;
-            containerCards.appendChild(card);
-        });
+        const card = document.createElement("div");
+        card.className = "form-box";
+        card.innerHTML = `
+            ${badgeHtml}
+            <h3 style="font-size: 1rem; font-weight: 700;">${p.nome}</h3>
+            <p style="font-size: 0.85rem; color: var(--primary-color);"><strong>${p.categoria}</strong> • ${p.municipio}</p>
+            <p style="font-size: 0.85rem;">📞 ${p.telefone}</p>
+            <p style="font-size: 0.85rem;">💰 Taxa: ${p.taxa || 0} Kz</p>
+            ${avaliacoesHtml}
+        `;
+        container.appendChild(card);
+    });
+}
 
-        adicionarMarcadoresLeaflet(lista);
-    }
+// Eventos básicos de navegação entre abas e filtros
+document.addEventListener("DOMContentLoaded", () => {
+    // Renderizar dados iniciais de demonstração
+    renderizarPrestadores([]);
 
-    if (btnBusca) btnBusca.addEventListener('click', buscarPrestadoresComGPS);
-    if (campoBusca) {
-        campoBusca.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') buscarPrestadoresComGPS();
-        });
-    }
-    
-    inicializarMapa();
-    buscarPrestadoresComGPS();
+    // Alternar abas na barra inferior
+    const navButtons = document.querySelectorAll(".nav-btn");
+    navButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            navButtons.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
 
-    // ------------------------------------------------------------------
-    // 8. MURAL DE GRITOS
-    // ------------------------------------------------------------------
-    const btnNovoGrito = document.getElementById('btn-novo-grito');
-    const formNovoGrito = document.getElementById('form-novo-grito');
-    const containerGritos = document.getElementById('container-gritos');
-
-    if (btnNovoGrito && formNovoGrito) {
-        btnNovoGrito.addEventListener('click', () => {
-            formNovoGrito.style.display = formNovoGrito.style.display === 'none' ? 'flex' : 'none';
-        });
-    }
-
-    async function carregarGritos() {
-        try {
-            const res = await fetch('/api/gritos');
-            const gritos = await res.json();
-            
-            containerGritos.innerHTML = '';
-            if (!Array.isArray(gritos) || gritos.length === 0) {
-                containerGritos.innerHTML = '<p style="text-align: center; opacity: 0.7;">Nenhum pedido de serviço ativo.</p>';
-                return;
-            }
-
-            gritos.forEach(g => {
-                const item = document.createElement('div');
-                item.className = 'grito-card';
-                item.style.cssText = "background: var(--card-bg); padding: 15px; border-radius: var(--radius); margin-bottom: 15px; box-shadow: var(--shadow); border: 1px solid var(--border-color);";
-                item.innerHTML = `
-                    <h3>${g.titulo}</h3>
-                    <p style="margin: 5px 0; color: var(--text-muted);"><i class="fa-solid fa-location-dot"></i> ${g.municipio}</p>
-                    <p style="margin-bottom: 12px;">${g.descricao}</p>
-                    <a href="https://wa.me/${g.telefone ? g.telefone.replace(/\D/g,'') : ''}" target="_blank" class="btn-primary" style="display: inline-block; text-decoration: none; font-size: 0.85rem;">
-                        <i class="fa-brands fa-whatsapp"></i> Responder ao Grito
-                    </a>
-                `;
-                containerGritos.appendChild(item);
+            const tabId = btn.getAttribute("data-tab");
+            document.querySelectorAll(".tab-content").forEach(tab => {
+                tab.classList.remove("active");
             });
-        } catch (err) {
-            console.error("Erro ao carregar gritos:", err);
-        }
-    }
-
-    if (formNovoGrito) {
-        formNovoGrito.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const payload = {
-                titulo: document.getElementById('grito-titulo').value,
-                municipio: document.getElementById('grito-municipio').value,
-                descricao: document.getElementById('grito-descricao').value,
-                telefone: document.getElementById('grito-telefone').value
-            };
-
-            try {
-                const res = await fetch('/api/gritos', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if (res.ok) {
-                    alert('Grito publicado com sucesso!');
-                    formNovoGrito.reset();
-                    formNovoGrito.style.display = 'none';
-                    carregarGritos();
-                } else {
-                    alert('Erro ao publicar pedido.');
-                }
-            } catch (err) {
-                alert('Erro de conexão.');
-            }
+            document.getElementById(`aba-${tabId}`).classList.add("active");
         });
-    }
+    });
 
-    // ------------------------------------------------------------------
-    // 9. REGISTO DE PRESTADOR COM CAPTURA AUTOMÁTICA DE GPS
-    // ------------------------------------------------------------------
-    const formPrestador = document.getElementById('form-prestador');
-    if (formPrestador) {
-        formPrestador.addEventListener('submit', (e) => {
-            e.preventDefault();
-
-            const enviarRegisto = (lat, lng) => {
-                const payload = {
-                    nome: document.getElementById('reg-nome').value,
-                    nif: document.getElementById('reg-nif').value,
-                    categoria: document.getElementById('reg-categoria').value,
-                    municipio: document.getElementById('reg-municipio').value,
-                    telefone: document.getElementById('reg-telefone').value,
-                    taxa: document.getElementById('reg-taxa').value,
-                    lat: lat,
-                    lng: lng
-                };
-
-                fetch('/api/prestadores', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                })
-                .then(res => {
-                    if (res.ok) {
-                        alert('Candidatura submetida com sucesso com coordenadas GPS!');
-                        formPrestador.reset();
-                        buscarPrestadoresComGPS();
-                    } else {
-                        alert('Erro ao guardar no servidor.');
-                    }
-                })
-                .catch(() => alert('Erro de conexão ao servidor.'));
-            };
-
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        enviarRegisto(position.coords.latitude, position.coords.longitude);
-                    },
-                    () => {
-                        enviarRegisto(-12.7761, 15.7392);
-                    },
-                    { enableHighAccuracy: true, timeout: 7000 }
-                );
-            } else {
-                enviarRegisto(-12.7761, 15.7392);
-            }
-        });
-    }
-
-    // ------------------------------------------------------------------
-    // 10. LOGIN
-    // ------------------------------------------------------------------
-    const formLogin = document.getElementById('form-login');
-    if (formLogin) {
-        formLogin.addEventListener('submit', async (e) => {
-            e.preventDefault();
+    // Filtro por categorias populares ao clicar nos cards de categoria
+    document.querySelectorAll(".cat-card").forEach(card => {
+        card.addEventListener("click", () => {
+            const cat = card.getAttribute("data-cat");
+            document.getElementById("filtro-categoria").value = cat;
             
-            const tipo = document.getElementById('login-tipo').value;
-            const email = document.getElementById('login-email').value;
-            const senha = document.getElementById('login-senha').value;
-
-            try {
-                const res = await fetch('/api/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, senha, tipo })
-                });
-
-                const data = await res.json();
-
-                if (res.ok) {
-                    localStorage.setItem('usuario_logado', JSON.stringify(data.usuario || { email, tipo }));
-
-                    if (tipo === 'admin') {
-                        alert('Sessão iniciada como ADMINISTRADOR com sucesso!');
-                        document.body.classList.add('modo-admin');
-                    } else {
-                        alert('Login efetuado com sucesso!');
-                    }
-
-                    modalLogin.style.display = 'none';
-                    formLogin.reset();
-                    
-                    const areaAuth = document.getElementById('area-auth');
-                    if (areaAuth) {
-                        areaAuth.innerHTML = `<span style="font-size:0.85rem; font-weight:600; color:var(--primary-color);">${email} (${tipo.toUpperCase()})</span>`;
-                    }
-                } else {
-                    alert(data.erro || 'Email ou senha incorretos.');
-                }
-            } catch (err) {
-                console.error("Erro no login:", err);
-                alert('Erro ao ligar ao servidor de autenticação.');
-            }
+            // Simular filtro na lista de exibição piloto/real
+            const filtrados = dadosPiloto.filter(p => p.categoria.toLowerCase().includes(cat.toLowerCase()));
+            renderizarPrestadores(filtrados);
         });
-    }
+    });
 });
