@@ -1,168 +1,315 @@
-<!DOCTYPE html>
-<html lang="pt" data-theme="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Huambo Plus - Plataforma de Serviços</title>
+/* ==========================================================================
+   HUAMBO PLUS - ESTILOS PRINCIPAIS
+   ========================================================================== */
+
+:root {
+    --primary-color: #0066cc;
+    --primary-hover: #0052a3;
+    --bg-color: #f4f6f9;
+    --card-bg: #ffffff;
+    --text-color: #1a1a1a;
+    --text-muted: #666666;
+    --border-color: #e2e8f0;
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --radius: 10px;
+}
+
+[data-theme="dark"] {
+    --bg-color: #121824;
+    --card-bg: #1e293b;
+    --text-color: #f8fafc;
+    --text-muted: #94a3b8;
+    --border-color: #334155;
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    padding-bottom: 40px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* --- Barra de Navegação --- */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--card-bg);
+    padding: 15px 20px;
+    box-shadow: var(--shadow);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.logo {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--primary-color);
+}
+
+.logo span {
+    color: #ff9900;
+}
+
+.nav-links {
+    display: flex;
+    gap: 10px;
+}
+
+.nav-btn {
+    background: transparent;
+    border: none;
+    padding: 8px 14px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: var(--radius);
+    transition: all 0.2s ease;
+}
+
+.nav-btn:hover {
+    background-color: rgba(0, 102, 204, 0.1);
+    color: var(--primary-color);
+}
+
+.nav-btn.active {
+    background-color: var(--primary-color);
+    color: #ffffff;
+}
+
+.nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#seletor-idioma, #btn-tema {
+    background: transparent;
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+/* --- Contentor Principal --- */
+.container {
+    max-width: 1000px;
+    margin: 25px auto;
+    padding: 0 15px;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* --- Barra de Pesquisa --- */
+.search-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    background-color: var(--card-bg);
+    padding: 15px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+}
+
+.search-bar input, 
+.search-bar select,
+.form-box input,
+.form-box select,
+.form-box textarea,
+.modal-content input,
+.modal-content select {
+    flex: 1;
+    min-width: 180px;
+    padding: 12px 15px;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.95rem;
+    outline: none;
+}
+
+.search-bar input:focus, 
+.search-bar select:focus,
+.form-box input:focus,
+.form-box select:focus,
+.modal-content input:focus {
+    border-color: var(--primary-color);
+}
+
+/* --- Alternador Lista / Mapa --- */
+.view-toggle {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.view-toggle button {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    padding: 8px 16px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.view-toggle button.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+/* --- Mapa --- */
+#map-container {
+    width: 100%;
+    height: 450px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+}
+
+#map {
+    width: 100%;
+    height: 100%;
+}
+
+.map-hidden {
+    display: none;
+}
+
+/* --- Botões Gerais --- */
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-hover);
+}
+
+/* --- Grelha de Cards & Formulários --- */
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.card-prestador {
+    background: var(--card-bg);
+    padding: 20px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.card-prestador h3 {
+    margin-bottom: 10px;
+    color: var(--primary-color);
+}
+
+.card-prestador p {
+    margin-bottom: 6px;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.form-box {
+    background-color: var(--card-bg);
+    padding: 25px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.form-box label, .modal-content label {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.gritos-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+/* --- Modal de Login --- */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: var(--card-bg);
+    padding: 30px;
+    border-radius: var(--radius);
+    width: 90%;
+    max-width: 400px;
+    position: relative;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.close-modal {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-muted);
+}
+
+/* Responsividade Mobile */
+@media (max-width: 600px) {
+    .navbar {
+        flex-direction: column;
+        gap: 12px;
+    }
     
-    <!-- Estilos Principais -->
-    <link rel="stylesheet" href="/style.css">
-    
-    <!-- FontAwesome para Ícones -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Leaflet.js para Mapa Interativo -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-</head>
-<body>
-
-    <!-- Navegação Superior -->
-    <nav class="navbar">
-        <div class="logo">Huambo<span>Plus</span></div>
-        <div class="nav-links">
-            <button class="nav-btn active" data-tab="busca"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
-            <button class="nav-btn" data-tab="gritos"><i class="fa-solid fa-bullhorn"></i> Mural de Gritos</button>
-            <button class="nav-btn" data-tab="registo"><i class="fa-solid fa-user-plus"></i> Registo Prestador</button>
-        </div>
-        <div class="nav-actions">
-            <select id="seletor-idioma">
-                <option value="PT">PT</option>
-                <option value="EN">EN</option>
-                <option value="UMB">UMB</option>
-            </select>
-            <button id="btn-tema" title="Alternar Tema"><i class="fa-solid fa-moon"></i></button>
-            <div id="area-auth">
-                <button id="btn-login-modal" class="btn-primary">Entrar</button>
-            </div>
-        </div>
-    </nav>
-
-    <main class="container">
-        <!-- ABA 1: BUSCA E MAPA -->
-        <section id="aba-busca" class="tab-content active">
-            <div class="search-bar">
-                <input type="text" id="campo-busca" placeholder="Ex: Canalizador, Eletricista, Professor...">
-                <select id="filtro-municipio">
-                    <option value="">Todos os Municípios</option>
-                    <option value="Huambo">Huambo</option>
-                    <option value="Caála">Caála</option>
-                    <option value="Bailundo">Bailundo</option>
-                    <option value="Ekunha">Ekunha</option>
-                    <option value="Ukuma">Ukuma</option>
-                </select>
-                <select id="filtro-categoria">
-                    <option value="">Todas as Categorias</option>
-                    <option value="Construção & Reparos - Canalizador">Canalizador</option>
-                    <option value="Construção & Reparos - Eletricista">Eletricista</option>
-                    <option value="Educação - Explicações">Professor / Explicador</option>
-                    <option value="Tecnologia - Informática">Técnico de Informática</option>
-                </select>
-                <button id="btn-executar-busca" class="btn-primary"><i class="fa-solid fa-search"></i> Pesquisar</button>
-            </div>
-
-            <div class="view-toggle">
-                <button id="btn-view-cards" class="active"><i class="fa-solid fa-list"></i> Lista</button>
-                <button id="btn-view-map"><i class="fa-solid fa-map-location-dot"></i> Mapa</button>
-            </div>
-
-            <!-- Grelha de Prestadores -->
-            <div id="container-cards" class="cards-grid"></div>
-
-            <!-- Contentor do Mapa -->
-            <div id="map-container" class="map-hidden">
-                <div id="map"></div>
-            </div>
-        </section>
-
-        <!-- ABA 2: MURAL DE GRITOS -->
-        <section id="aba-gritos" class="tab-content">
-            <div class="gritos-header">
-                <h2>Mural de Pedidos Rápidos (Gritos)</h2>
-                <button id="btn-novo-grito" class="btn-primary"><i class="fa-solid fa-plus"></i> Publicar Grito</button>
-            </div>
-            
-            <!-- Formulário Dinâmico de Novo Grito -->
-            <form id="form-novo-grito" class="form-box" style="display: none; margin-bottom: 25px;">
-                <h3>Novo Pedido de Serviço</h3>
-                <label>Título do Pedido</label>
-                <input type="text" id="grito-titulo" placeholder="Ex: Preciso urgente de um canalizador na Cidade Alta" required>
-                <label>Município</label>
-                <select id="grito-municipio" required>
-                    <option value="Huambo">Huambo</option>
-                    <option value="Caála">Caála</option>
-                    <option value="Bailundo">Bailundo</option>
-                </select>
-                <label>Descrição Detalhada</label>
-                <textarea id="grito-descricao" rows="3" placeholder="Descreva o problema..." required></textarea>
-                <label>Telefone / WhatsApp para Contacto</label>
-                <input type="text" id="grito-telefone" placeholder="+244 ..." required>
-                <button type="submit" class="btn-primary">Publicar no Mural</button>
-            </form>
-
-            <div id="container-gritos" class="gritos-list"></div>
-        </section>
-
-        <!-- ABA 3: REGISTO DE PRESTADOR -->
-        <section id="aba-registo" class="tab-content">
-            <h2>Candidatura de Prestador de Serviços</h2>
-            <form id="form-prestador" class="form-box">
-                <label>Nome Completo</label>
-                <input type="text" id="reg-nome" required>
-
-                <label>NIF</label>
-                <input type="text" id="reg-nif" placeholder="Opcional">
-
-                <label>Categoria / Profissão</label>
-                <select id="reg-categoria" required>
-                    <option value="Construção & Reparos - Canalizador">Canalizador</option>
-                    <option value="Construção & Reparos - Eletricista">Eletricista</option>
-                    <option value="Educação - Explicações">Professor / Explicador</option>
-                    <option value="Tecnologia - Informática">Técnico de Informática</option>
-                </select>
-
-                <label>Município</label>
-                <select id="reg-municipio" required>
-                    <option value="Huambo">Huambo</option>
-                    <option value="Caála">Caála</option>
-                    <option value="Bailundo">Bailundo</option>
-                </select>
-
-                <label>Telefone / WhatsApp</label>
-                <input type="text" id="reg-telefone" placeholder="+244 ..." required>
-
-                <label>Taxa de Deslocação (Kz)</label>
-                <input type="number" id="reg-taxa" value="0">
-
-                <button type="submit" class="btn-primary">Submeter Candidatura</button>
-            </form>
-        </section>
-    </main>
-
-    <!-- MODAL DE LOGIN (COMUM E ADMINISTRADOR) -->
-    <div id="modal-login" class="modal">
-        <div class="modal-content">
-            <span class="close-modal" id="btn-fechar-modal">&times;</span>
-            <h2>Acessar Conta</h2>
-            <form id="form-login">
-                <label>Tipo de Conta</label>
-                <select id="login-tipo" required>
-                    <option value="usuario">Utilizador Comum</option>
-                    <option value="admin">Administrador</option>
-                </select>
-
-                <label>Email</label>
-                <input type="email" id="login-email" required>
-
-                <label>Senha</label>
-                <input type="password" id="login-senha" required>
-
-                <button type="submit" class="btn-primary" style="width: 100%; margin-top: 15px;">Entrar</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Script Principal -->
-    <script src="/app.js"></script>
-</body>
-</html>
+    .search-bar input, .search-bar select, .search-bar button {
+        width: 100%;
+        flex: none;
+    }
+}
