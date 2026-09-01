@@ -2,10 +2,10 @@ const express = require('express');
 const path = require('path');
 const app = express();
 
-// Diz ao servidor para procurar os ficheiros estáticos (HTML, CSS, JS) dentro da pasta 'public'
+// Serve os ficheiros estáticos da pasta 'public'
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Garante que qualquer rota aponta para o index.html dentro da pasta 'public'
+// Redireciona qualquer rota para o index.html
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
