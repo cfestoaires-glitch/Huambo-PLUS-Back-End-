@@ -5,62 +5,48 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Huambo Plus</title>
     
-    <!-- Biblioteca oficial do Supabase -->
+    <!-- IMPORTANTE: Biblioteca do Supabase necessária para ligar à base de dados -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <!-- Estilos base para a aplicação -->
+
     <style>
-        * {
-            box-sizing: border-box;
-        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f8fafc;
+            background-color: #f1f5f9;
             margin: 0;
             padding: 10px;
-            color: #0f172a;
+            color: #1e293b;
         }
         header {
             text-align: center;
-            margin-bottom: 15px;
+            padding: 15px 0;
         }
         h1 {
             font-size: 1.4rem;
-            margin: 0 0 5px 0;
-            color: #1e293b;
+            margin: 0;
+            color: #0f172a;
         }
         p.subtitle {
             font-size: 0.8rem;
             color: #64748b;
-            margin: 0;
-        }
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
+            margin: 4px 0 15px 0;
         }
     </style>
 </head>
 <body>
-
     <header>
         <h1>Huambo Plus</h1>
         <p class="subtitle">Encontre prestadores de serviços de confiança na região</p>
     </header>
 
     <main>
-        <!-- Aba Principal: Escolha de Perfil, Registos e Admin -->
-        <div id="aba-registar" class="tab-content active"></div>
-
-        <!-- Aba Secundária: Lista de Prestadores Aprovados -->
-        <div id="aba-buscar" class="tab-content" style="max-width: 450px; margin: 0 auto;">
-            <h3 style="font-size: 1rem; margin-bottom: 10px; color: #1e293b;">Prestadores Disponíveis</h3>
-            <div id="container-cards"></div>
-        </div>
+        <!-- Elemento crucial onde o app.js vai desenhar os perfis -->
+        <div id="aba-registar"></div>
+        
+        <!-- Elemento onde a lista de prestadores aprovados vai aparecer -->
+        <div id="container-cards" style="max-width: 450px; margin: 20px auto;"></div>
     </main>
 
-    <!-- Script principal da aplicação -->
+    <!-- O script JavaScript principal -->
     <script src="app.js"></script>
 </body>
 </html>
