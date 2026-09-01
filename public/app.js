@@ -13,40 +13,50 @@ let FAVORITOS = [];
 let GRITOS = [];
 let PRESTADORES = [];
 let CANDIDATOS = [];
-let POSICAO_USUARIO = null;
 let IDIOMA_ATUAL = 'pt';
 let DARK_MODE = localStorage.getItem('huambo_dark') === 'true';
 
 // ============================================================
-//  CONTROLE DE TELAS E INICIALIZAÇÃO
+//  FUNÇÃO PARA MOSTRAR TELA (ESCONDE SPLASH / OUTRAS TELAS)
 // ============================================================
 function mostrarTela(id) {
     document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
     const tela = document.getElementById(id);
-    if (tela) tela.classList.add('active');
+    if (tela) {
+        tela.classList.add('active');
+    } else {
+        console.warn(`⚠️ Ecrã com o ID '${id}' não encontrada no HTML.`);
+    }
 }
 
+// Fallback para forçar a ecrã de login se o backend/rede demorar a responder
 function forcarLogin() {
     if (!currentUser) {
-        console.log('⏰ Redirecionando para tela de login.');
+        console.log('⏰ Tempo limite atingido: Redirecionando para login.');
         mostrarTela('login');
     }
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Fallback de segurança para garantir exibição do login se não houver sessão ativa
-    setTimeout(forcarLogin, 2000);
+// ============================================================
+//  INICIALIZAÇÃO DA APLICAÇÃO (DOM LOADED)
+// ============================================================
+document.addEventListener('DOMContentLoaded', async function() {
+    // Timer de segurança: após 2 segundos desativa o carregamento travado
+    const timeoutFallback = setTimeout(forcarLogin, 2000);
 
-    if (typeof window.supabase !== 'undefined') {
+    // Inicialização segura do Supabase
+    if (typeof window.supabase !== 'undefined' && typeof window.supabase.createClient === 'function') {
         try {
             supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            console.log('✅ Supabase inicializado');
-            verificarSessao();
+            console.log('✅ Supabase inicializado com sucesso.');
+            await verificarSessao();
         } catch (e) {
-            console.error('Erro ao inicializar Supabase:', e);
+            console.error('❌ Erro ao inicializar Supabase:', e);
+            forcarLogin();
         }
     } else {
-        console.warn('⚠️ Supabase JS SDK não carregado no HTML.');
+        console.warn('⚠️ SDK do Supabase não encontrado no HTML. Indo para Login...');
+        forcarLogin();
     }
 });
 
@@ -54,21 +64,25 @@ document.addEventListener('DOMContentLoaded', function() {
 //  SESSÃO E AUTENTICAÇÃO
 // ============================================================
 async function verificarSessao() {
-    if (!supabase) return;
+    if (!supabase) return forcarLogin();
     try {
-        const { data } = await supabase.auth.getSession();
-        if (data?.session) {
-            const { data: perfil } = await supabase
-                .from('perfis')
-                .select('*')
-                .eq('id', data.session.user.id)
-                .single();
-                
-            currentUser = perfil || { id: data.session.user.id, nome: data.session.user.email, email: data.session.user.email };
-            await iniciarApp();
+        const { data, error } = await supabase.auth.getSession();
+        if (error || !data?.session) {
+            forcarLogin();
+            return;
         }
+
+        const { data: perfil } = await supabase
+            .from('perfis')
+            .select('*')
+            .eq('id', data.session.user.id)
+            .single();
+            
+        currentUser = perfil || { id: data.session.user.id, nome: data.session.user.email, email: data.session.user.email };
+        await iniciarApp();
     } catch (e) {
         console.error('Erro ao verificar sessão:', e);
+        forcarLogin();
     }
 }
 
@@ -104,7 +118,7 @@ async function handleLogin() {
 
         if (msg) msg.textContent = '';
         mostrarToast('Bem-vindo, ' + (currentUser.nome || email));
-        iniciarApp();
+        await iniciarApp();
     } catch (e) {
         if (msg) msg.textContent = 'Erro: ' + e.message;
     }
@@ -151,7 +165,7 @@ async function logout() {
 }
 
 // ============================================================
-//  UI UTILS & ESTADOS
+//  UI UTILS & TOASTS
 // ============================================================
 function mostrarToast(msg) {
     const t = document.getElementById('toast');
@@ -195,7 +209,7 @@ function mudarIdioma(lang) {
 }
 
 // ============================================================
-//  CARREGAMENTO DE DADOS
+//  CARREGAMENTO DE DADOS (SUPABASE)
 // ============================================================
 async function carregarDados() {
     if (!supabase) return;
@@ -226,14 +240,15 @@ async function carregarDados() {
 }
 
 // ============================================================
-//  SOCKET.IO & CHAT
+//  SOCKET.IO (CHAT EM TEMPO REAL)
 // ============================================================
 function conectarSocket() {
-    if (!currentUser || (socket && socket.connected)) return;
+    if (!currentUser || typeof io === 'undefined') return;
+    if (socket && socket.connected) return;
 
     socket = io();
 
-    socket.on('connect', () => console.log('🔌 Socket conectado'));
+    socket.on('connect', () => console.log('🔌 Socket conectado ao servidor.'));
 
     socket.on('chat_history', (msgs) => {
         const container = document.getElementById('chatContainer');
@@ -262,8 +277,8 @@ function abrirChat(prestadorId) {
     currentPrestadorId = prestadorId;
 
     if (!socket) conectarSocket();
+    if (socket) socket.emit('join_chat', { userId: currentUser.id, prestadorId });
 
-    socket.emit('join_chat', { userId: currentUser.id, prestadorId });
     document.getElementById('modalChat')?.classList.add('open');
     
     const p = PRESTADORES.find(x => x.id === prestadorId);
@@ -276,12 +291,14 @@ function enviarMensagemChat() {
     const texto = input?.value.trim();
     if (!texto || !currentPrestadorId || !currentUser) return;
 
-    socket.emit('send_message', {
-        userId: currentUser.id,
-        prestadorId: currentPrestadorId,
-        texto,
-        nome: currentUser.nome || currentUser.email
-    });
+    if (socket) {
+        socket.emit('send_message', {
+            userId: currentUser.id,
+            prestadorId: currentPrestadorId,
+            texto,
+            nome: currentUser.nome || currentUser.email
+        });
+    }
     input.value = '';
 }
 
@@ -290,7 +307,7 @@ function fecharModalChat() {
 }
 
 // ============================================================
-//  RENDERIZAÇÃO DA INTERFACE
+//  RENDERIZAÇÃO DAS PÁGINAS DO APP
 // ============================================================
 function renderizarConteudo() {
     const container = document.getElementById('mainContent');
@@ -321,7 +338,7 @@ function renderHome() {
     
     html += `<h3 style="margin: 16px 0 12px 0;">⭐ Destaques</h3>`;
     if (destaques.length === 0) {
-        html += '<div class="sem-res">Sem prestadores em destaque no momento.</div>';
+        html += '<div class="sem-res">Sem prestadores em destaque de momento.</div>';
     } else {
         destaques.forEach(p => html += renderCard(p));
     }
@@ -515,49 +532,6 @@ async function criarGrito() {
 function abrirModalRegistoPrestador() { document.getElementById('modalRegistoPrestador')?.classList.add('open'); }
 function fecharModalRegistoPrestador() { document.getElementById('modalRegistoPrestador')?.classList.remove('open'); }
 
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('formRegistoPrestador');
-    if (form) {
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const nome = document.getElementById('regNome').value;
-            const profissao = document.getElementById('regProfissao').value;
-            const categoria = document.getElementById('regCategoria').value;
-            const municipio = document.getElementById('regMunicipio').value;
-            const telefone = document.getElementById('regTelefone').value;
-            const descricao = document.getElementById('regDescricao').value;
-            const selfieFile = document.getElementById('regSelfie').files[0];
-            const biFile = document.getElementById('regBI').files[0];
-
-            if (!selfieFile || !biFile) return mostrarToast('Submeta a Selfie e a cópia do BI.');
-
-            const readFileAsBase64 = (file) => new Promise((res, rej) => {
-                const r = new FileReader();
-                r.onload = () => res(r.result);
-                r.onerror = rej;
-                r.readAsDataURL(file);
-            });
-
-            try {
-                const selfieData = await readFileAsBase64(selfieFile);
-                const biData = await readFileAsBase64(biFile);
-
-                const { error } = await supabase.from('candidatos').insert([{
-                    nome, profissao, categoria, municipio, telefone, descricao, 
-                    selfie: selfieData, bi: biData, status: 'PENDENTE' 
-                }]);
-
-                if (error) throw error;
-
-                fecharModalRegistoPrestador();
-                mostrarToast('Candidatura enviada! Aguarde pela aprovação.');
-            } catch (err) {
-                mostrarToast('Erro ao submeter: ' + err.message);
-            }
-        });
-    }
-});
-
 let avaliarTarget = null;
 function abrirModalAvaliar(id, nome) {
     avaliarTarget = { id, nome };
@@ -654,7 +628,7 @@ async function iniciarApp() {
 }
 
 // ============================================================
-//  EXPOSIÇÃO DE MÉTODOS GLOBAIS PARA O HTML
+//  EXPOSIÇÃO DE MÉTODOS GLOBAIS
 // ============================================================
 window.handleLogin = handleLogin;
 window.handleRegister = handleRegister;
@@ -679,4 +653,4 @@ window.fecharModalRegistoPrestador = fecharModalRegistoPrestador;
 window.abrirModalAvaliar = abrirModalAvaliar;
 window.simularOrcamento = simularOrcamento;
 
-console.log('🚀 Huambo Plus app.js carregado com sucesso.');
+console.log('🚀 Huambo Plus app.js pronto!');
