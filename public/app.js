@@ -178,26 +178,79 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ------------------------------------------------------------------
-    // 7. PESQUISA INTELIGENTE COM SINÓNIMOS E ORDENAÇÃO GPS
+    // 7. PESQUISA INTELIGENTE COM SINÓNIMOS MASSIVOS E ORDENAÇÃO GPS
     // ------------------------------------------------------------------
     const btnBusca = document.getElementById('btn-executar-busca');
     const campoBusca = document.getElementById('campo-busca');
 
     const dicionarioSinonimos = {
-        "encanador": "canalizador",
+        // --- CANALIZAÇÃO ---
+        "encanador": "Canalizador",
+        "canalizador": "Canalizador",
+        "torneira": "Canalizador",
+        "fuga": "Canalizador",
+        "cano": "Canalizador",
+        "tubo": "Canalizador",
+        "esgoto": "Canalizador",
+        "sanita": "Canalizador",
+        "pia": "Canalizador",
+        "vazamento": "Canalizador",
+        "água": "Canalizador",
+
+        // --- ELETRICISTA ---
+        "eletricista": "Eletricista",
+        "luz": "Eletricista",
+        "eletricidade": "Eletricista",
+        "corrente": "Eletricista",
+        "curto-circuito": "Eletricista",
+        "disjuntor": "Eletricista",
+        "tomada": "Eletricista",
+        "lampada": "Eletricista",
+        "lâmpada": "Eletricista",
+        "fio": "Eletricista",
+        "gerador": "Eletricista",
+
+        // --- EXPLICAÇÕES / EDUCAÇÃO ---
+        "professor": "Educação - Explicações",
+        "prof": "Educação - Explicações",
+        "explicador": "Educação - Explicações",
+        "explicações": "Educação - Explicações",
+        "explicacao": "Educação - Explicações",
+        "aulas": "Educação - Explicações",
+        "aula": "Educação - Explicações",
+        "estudo": "Educação - Explicações",
+        "reforço": "Educação - Explicações",
+        "matemática": "Educação - Explicações",
+        "física": "Educação - Explicações",
+        "química": "Educação - Explicações",
+        "português": "Educação - Explicações",
+        "inglês": "Educação - Explicações",
+
+        // --- INFORMÁTICA / TECNOLOGIA ---
+        "informática": "Tecnologia - Informática",
+        "informatica": "Tecnologia - Informática",
+        "computador": "Tecnologia - Informática",
+        "pc": "Tecnologia - Informática",
+        "laptop": "Tecnologia - Informática",
+        "ecrã": "Tecnologia - Informática",
+        "teclado": "Tecnologia - Informática",
+        "impressora": "Tecnologia - Informática",
+        "internet": "Tecnologia - Informática",
+        "formatação": "Tecnologia - Informática",
+        "virus": "Tecnologia - Informática",
+        "técnico": "Tecnologia - Informática",
+
+        // --- OUTROS REPAROS ---
         "conserto": "reparo",
         "arranjo": "reparo",
-        "reparações": "reparos",
-        "computador": "informática",
-        "pc": "informática",
-        "laptop": "informática",
-        "explicador": "explicações",
-        "professor": "explicações",
-        "aulas": "explicações",
-        "luz": "eletricista",
-        "eletricidade": "eletricista",
-        "torneira": "canalizador",
-        "fuga": "canalizador"
+        "reparos": "reparo",
+        "reparações": "reparo",
+        "pintor": "Pintura",
+        "pintura": "Pintura",
+        "carpinteiro": "Carpintaria",
+        "pedreiro": "Obras",
+        "construção": "Obras",
+        "limpeza": "Limpeza"
     };
 
     function expandirTermoComSinonimos(termo) {
