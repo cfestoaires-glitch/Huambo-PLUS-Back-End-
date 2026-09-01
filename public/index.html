@@ -1,201 +1,122 @@
 <!DOCTYPE html>
-<html lang="pt" data-theme="dark">
+<html lang="pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Huambo Plus - Plataforma de Serviços</title>
-    
-    <!-- Estilos Principais -->
-    <link rel="stylesheet" href="/style.css">
-    
+    <title>Huambo Plus - Prestadores e Serviços</title>
     <!-- FontAwesome para Ícones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Leaflet CSS & JS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Folha de Estilos Principal -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- Navegação Superior -->
-    <nav class="navbar">
-        <div class="logo">Huambo<span>Plus</span></div>
-        <div class="nav-actions">
-            <select id="seletor-idioma" style="background: var(--bg-color); color: var(--text-color); border: 1px solid var(--border-color); padding: 6px 10px; border-radius: 6px; font-size: 0.85rem; outline: none;">
-                <option value="PT">PT</option>
-                <option value="EN">EN</option>
-                <option value="UMB">UMB</option>
-            </select>
-            <button id="btn-tema" title="Alternar Tema" style="background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-color); width: 34px; height: 34px; border-radius: 6px; font-size: 0.95rem; cursor: pointer; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-moon"></i></button>
-            <div id="area-auth" style="display: inline-block;">
-                <button id="btn-login-modal" class="btn-primary" style="padding: 6px 14px; font-size: 0.85rem; border-radius: 6px;">Entrar</button>
-            </div>
+    <!-- Cabeçalho Principal -->
+    <header class="main-header">
+        <div class="logo-area">
+            <h1>Huambo<span>Plus</span></h1>
         </div>
-    </nav>
+        <div class="header-controls">
+            <select id="seletor-idioma" aria-label="Selecionar idioma">
+                <option value="pt">PT</option>
+            </select>
+            <button id="btn-tema" aria-label="Alternar tema escuro/claro"><i class="fa-solid fa-moon"></i></button>
+            <button class="btn-entrar">Entrar</button>
+        </div>
+    </header>
 
-    <main class="container">
-        <!-- ABA 1: BUSCA E MAPA -->
-        <section id="aba-busca" class="tab-content active">
-            <!-- CAIXA DE PESQUISA UNIFORME -->
-            <div class="search-container-box">
+    <!-- Conteúdo Principal Dinâmico por Abas -->
+    <main class="main-container">
+        
+        <!-- ABA 1: BUSCAR -->
+        <section id="aba-buscar" class="tab-content active">
+            <!-- Barra de Pesquisa -->
+            <div class="search-box-container">
                 <div class="search-input-wrapper">
                     <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" id="campo-busca" placeholder="O que precisa hoje? (Ex: Professor, Luz...)">
+                    <input type="text" id="campo-busca" placeholder="O que procuras? (Ex: Advogado, Canalizador...)">
                 </div>
-                
-                <div class="search-controls-row">
-                    <select id="filtro-municipio">
+                <div class="search-row-filters">
+                    <select id="filtro-municipio" aria-label="Filtrar por município">
                         <option value="">Todos os Municípios</option>
                         <option value="Huambo">Huambo</option>
                         <option value="Caála">Caála</option>
                         <option value="Bailundo">Bailundo</option>
-                        <option value="Ekunha">Ekunha</option>
-                        <option value="Ukuma">Ukuma</option>
                     </select>
-                    
-                    <button id="btn-executar-busca"><i class="fa-solid fa-search"></i> Pesquisar</button>
+                    <button id="btn-executar-busca" class="btn-primary">Pesquisar</button>
                 </div>
             </div>
 
-            <!-- GRELHA VISUAL DE CATEGORIAS -->
-            <div class="categorias-section">
-                <h3>Categorias Populares</h3>
-                <div class="categorias-grid">
+            <!-- Categorias Populares -->
+            <div class="categories-section">
+                <h2>Categorias Populares</h2>
+                <div class="categories-grid">
                     <div class="cat-card" data-cat="Canalizador">
-                        <i class="fa-solid fa-faucet-drip" style="color: var(--primary-color);"></i>
+                        <i class="fa-solid fa-faucet-drip"></i>
                         <span>Canalização</span>
                     </div>
                     <div class="cat-card" data-cat="Eletricista">
-                        <i class="fa-solid fa-bolt" style="color: #f1c40f;"></i>
+                        <i class="fa-solid fa-bolt"></i>
                         <span>Eletricista</span>
                     </div>
-                    <div class="cat-card" data-cat="Educação - Explicações">
-                        <i class="fa-solid fa-graduation-cap" style="color: #2ecc71;"></i>
+                    <div class="cat-card" data-cat="Explicações">
+                        <i class="fa-solid fa-graduation-cap"></i>
                         <span>Explicações</span>
                     </div>
-                    <div class="cat-card" data-cat="Tecnologia - Informática">
-                        <i class="fa-solid fa-laptop-code" style="color: #3498db;"></i>
+                    <div class="cat-card" data-cat="Informática">
+                        <i class="fa-solid fa-laptop-code"></i>
                         <span>Informática</span>
                     </div>
                 </div>
             </div>
-            
-            <input type="hidden" id="filtro-categoria" value="">
 
+            <!-- Alternador de Vista (Lista / Mapa) -->
             <div class="view-toggle">
-                <button id="btn-view-cards" class="active"><i class="fa-solid fa-list"></i> Lista</button>
-                <button id="btn-view-map"><i class="fa-solid fa-map-location-dot"></i> Mapa</button>
+                <button class="toggle-btn active"><i class="fa-solid fa-list"></i> Lista</button>
+                <button class="toggle-btn"><i class="fa-solid fa-map-location-dot"></i> Mapa</button>
             </div>
 
-            <!-- Grelha de Prestadores -->
-            <div id="container-cards" class="cards-grid"></div>
-
-            <!-- Contentor do Mapa -->
-            <div id="map-container" class="map-hidden">
-                <div id="map" style="width: 100%; height: 100%;"></div>
+            <!-- Contentor de Cartões / Resultados -->
+            <div id="container-cards" class="cards-grid">
+                <!-- Preenchido dinamicamente via app.js -->
             </div>
         </section>
 
-        <!-- ABA 2: MURAL DE GRITOS -->
+        <!-- ABA 2: GRITOS / MURAL -->
         <section id="aba-gritos" class="tab-content">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                <h2 style="font-size: 1.15rem; font-weight: 700;">Mural de Pedidos</h2>
-                <button id="btn-novo-grito" class="btn-primary" style="padding: 8px 14px; font-size: 0.85rem;"><i class="fa-solid fa-plus"></i> Novo Grito</button>
+            <div class="form-box">
+                <h2>Mural de Gritos</h2>
+                <p style="color: var(--text-muted); font-size: 0.85rem;">Publica necessidades rápidas ou avisos para a comunidade do Huambo.</p>
             </div>
-            
-            <form id="form-novo-grito" class="form-box" style="display: none; margin-bottom: 20px;">
-                <h3>Novo Pedido de Serviço</h3>
-                <label>Título do Pedido</label>
-                <input type="text" id="grito-titulo" placeholder="Ex: Preciso de um canalizador..." required>
-                <label>Município</label>
-                <select id="grito-municipio" required>
-                    <option value="Huambo">Huambo</option>
-                    <option value="Caála">Caála</option>
-                    <option value="Bailundo">Bailundo</option>
-                </select>
-                <label>Descrição Detalhada</label>
-                <textarea id="grito-descricao" rows="3" placeholder="Descreva o problema..." required></textarea>
-                <label>Telefone / WhatsApp</label>
-                <input type="text" id="grito-telefone" placeholder="+244 ..." required>
-                <button type="submit" class="btn-primary">Publicar no Mural</button>
-            </form>
-
-            <div id="container-gritos" class="cards-grid"></div>
         </section>
 
-        <!-- ABA 3: REGISTO DE PRESTADOR -->
-        <section id="aba-registo" class="tab-content">
-            <form id="form-prestador" class="form-box">
-                <h2>Candidatura de Prestador</h2>
-                <label>Nome Completo</label>
-                <input type="text" id="reg-nome" required>
-
-                <label>NIF (Opcional)</label>
-                <input type="text" id="reg-nif">
-
-                <label>Categoria / Profissão</label>
-                <select id="reg-categoria" required>
-                    <option value="Canalizador">Canalizador</option>
-                    <option value="Eletricista">Eletricista</option>
-                    <option value="Educação - Explicações">Professor / Explicador</option>
-                    <option value="Tecnologia - Informática">Técnico de Informática</option>
-                </select>
-
-                <label>Município</label>
-                <select id="reg-municipio" required>
-                    <option value="Huambo">Huambo</option>
-                    <option value="Caála">Caála</option>
-                    <option value="Bailundo">Bailundo</option>
-                </select>
-
-                <label>Telefone / WhatsApp</label>
-                <input type="text" id="reg-telefone" placeholder="+244 ..." required>
-
-                <label>Taxa de Deslocação (Kz)</label>
-                <input type="number" id="reg-taxa" value="0">
-
-                <button type="submit" class="btn-primary" style="margin-top: 4px;">Submeter Candidatura (GPS)</button>
-            </form>
+        <!-- ABA 3: REGISTAR -->
+        <section id="aba-registar" class="tab-content">
+            <div class="form-box">
+                <h2>Registar como Prestador</h2>
+                <p style="color: var(--text-muted); font-size: 0.85rem;">Junte-se à plataforma e exponha os seus serviços.</p>
+            </div>
         </section>
+
     </main>
 
-    <!-- BARRA DE NAVEGAÇÃO INFERIOR FIXA -->
+    <!-- Navegação Inferior Fixa para Telemóvel -->
     <nav class="bottom-nav">
-        <button class="nav-btn active" data-tab="busca">
-            <i class="fa-solid fa-magnifying-glass"></i> Buscar
+        <button class="nav-btn active" data-tab="buscar">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <span>Buscar</span>
         </button>
         <button class="nav-btn" data-tab="gritos">
-            <i class="fa-solid fa-bullhorn"></i> Gritos
+            <i class="fa-solid fa-bullhorn"></i>
+            <span>Gritos</span>
         </button>
-        <button class="nav-btn" data-tab="registo">
-            <i class="fa-solid fa-user-plus"></i> Registar
+        <button class="nav-btn" data-tab="registar">
+            <i class="fa-solid fa-user-plus"></i>
+            <span>Registar</span>
         </button>
     </nav>
 
-    <!-- MODAL DE LOGIN -->
-    <div id="modal-login" class="modal">
-        <div class="modal-content">
-            <span class="close-modal" id="btn-fechar-modal">&times;</span>
-            <h2 style="margin-bottom: 16px;">Acessar Conta</h2>
-            <form id="form-login" style="display: flex; flex-direction: column; gap: 12px;">
-                <label style="font-size:0.85rem; font-weight:600; color:var(--text-muted);">Tipo de Conta</label>
-                <select id="login-tipo" required style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); background-color: var(--bg-color); color: var(--text-color); font-size: 0.95rem;">
-                    <option value="usuario">Utilizador Comum</option>
-                    <option value="admin">Administrador</option>
-                </select>
-
-                <label style="font-size:0.85rem; font-weight:600; color:var(--text-muted);">Email</label>
-                <input type="email" id="login-email" required style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); background-color: var(--bg-color); color: var(--text-color); font-size: 0.95rem;">
-
-                <label style="font-size:0.85rem; font-weight:600; color:var(--text-muted);">Senha</label>
-                <input type="password" id="login-senha" required style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); background-color: var(--bg-color); color: var(--text-color); font-size: 0.95rem;">
-
-                <button type="submit" class="btn-primary" style="width: 100%; margin-top: 8px;">Entrar</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Script Principal -->
-    <script src="/app.js"></script>
+    <!-- Script Principal da Aplicação -->
+    <script src="app.js"></script>
 </body>
 </html>
