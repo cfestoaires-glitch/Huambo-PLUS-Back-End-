@@ -1,11 +1,4 @@
 // ==========================================
-// APANHADOR DE ERROS PARA TELEMÓVEL
-// ==========================================
-window.onerror = function(msg, url, line) {
-    alert("ERRO: " + msg + " na linha " + line);
-};
-
-// ==========================================
 // 1. CONFIGURAÇÃO DO SUPABASE
 // ==========================================
 const supabaseUrl = 'https://vpukkvxnlwyhoqpgckzh.supabase.co';
@@ -34,7 +27,7 @@ function configurarEcraInicial() {
     if (!abaRegistar) return;
 
     abaRegistar.innerHTML = `
-        <div style="max-width: 450px; margin: 20px auto; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+        <div style="max-width: 450px; margin: 0 auto; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
             <h2 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 6px; color: #0f172a; text-align: center;">Huambo Plus</h2>
             <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 20px; text-align: center;">Selecione o seu perfil para continuar:</p>
             
@@ -81,14 +74,9 @@ function mostrarSecaoCliente() {
     container.innerHTML = `
         <div style="border-top: 1px solid #e2e8f0; padding-top: 15px;">
             <h3 style="font-size: 0.95rem; font-weight: 700; color: #1e293b; margin-bottom: 6px;">Bem-vindo, Cliente!</h3>
-            <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 12px;">Pode navegar pela lista de prestadores aprovados para ver contactos e enviar mensagens.</p>
-            <button id="btn-ir-para-busca" style="width: 100%; padding: 10px; background: #16a34a; color: white; border: none; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer;">Ver Prestadores Disponíveis</button>
+            <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 12px;">Pode navegar abaixo pela lista de prestadores aprovados para ver contactos.</p>
         </div>
     `;
-
-    document.getElementById("btn-ir-para-busca").addEventListener("click", () => {
-        alert("Consulte a lista de prestadores disponíveis na página.");
-    });
 }
 
 // ==========================================
@@ -102,17 +90,17 @@ function mostrarSecaoPrestador() {
             <p style="font-size: 0.75rem; color: #64748b; margin-bottom: 12px;">Preencha os seus dados e envie os documentos para validação.</p>
             
             <form id="form-registo-prestador">
-                <input type="text" id="reg-nome" placeholder="Nome Completo" required style="width:100%; padding:8px; margin-bottom:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.8rem;">
-                <input type="text" id="reg-categoria" placeholder="Categoria (Ex: Eletricista, Canalizador)" required style="width:100%; padding:8px; margin-bottom:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.8rem;">
+                <input type="text" id="reg-nome" placeholder="Nome Completo" required style="width:100%; padding:8px; margin-bottom:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.8rem; box-sizing:border-box;">
+                <input type="text" id="reg-categoria" placeholder="Categoria (Ex: Eletricista, Canalizador)" required style="width:100%; padding:8px; margin-bottom:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.8rem; box-sizing:border-box;">
                 
-                <select id="reg-municipio" style="width:100%; padding:8px; margin-bottom:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.8rem;">
+                <select id="reg-municipio" style="width:100%; padding:8px; margin-bottom:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.8rem; box-sizing:border-box;">
                     <option value="Huambo">Huambo</option>
                     <option value="Caála">Caála</option>
                     <option value="Bailundo">Bailundo</option>
                 </select>
 
-                <input type="text" id="reg-telefone" placeholder="Telefone / WhatsApp" required style="width:100%; padding:8px; margin-bottom:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.8rem;">
-                <input type="number" id="reg-taxa" placeholder="Taxa de Deslocação (Kz)" style="width:100%; padding:8px; margin-bottom:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.8rem;">
+                <input type="text" id="reg-telefone" placeholder="Telefone / WhatsApp" required style="width:100%; padding:8px; margin-bottom:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.8rem; box-sizing:border-box;">
+                <input type="number" id="reg-taxa" placeholder="Taxa de Deslocação (Kz)" style="width:100%; padding:8px; margin-bottom:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.8rem; box-sizing:border-box;">
                 
                 <label style="font-size:0.75rem; font-weight:600; display:block; margin-bottom:2px;">Foto Selfie:</label>
                 <input type="file" id="reg-file-selfie" accept="image/*" required style="width:100%; font-size:0.75rem; margin-bottom:8px;">
@@ -177,7 +165,7 @@ function mostrarSecaoAdminLogin() {
         <div style="border-top: 1px solid #e2e8f0; padding-top: 15px;">
             <h3 style="font-size: 0.95rem; font-weight: 700; color: #1e293b; margin-bottom: 6px;">Painel Administrativo</h3>
             <p style="font-size: 0.75rem; color: #64748b; margin-bottom: 10px;">Insira a chave de acesso de administrador:</p>
-            <input type="password" id="admin-pin" placeholder="Chave de Admin" style="width:100%; padding:8px; margin-bottom:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.8rem;">
+            <input type="password" id="admin-pin" placeholder="Chave de Admin" style="width:100%; padding:8px; margin-bottom:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.8rem; box-sizing:border-box;">
             <button id="btn-login-admin" style="width: 100%; padding: 9px; background: #475569; color: white; border: none; border-radius: 6px; font-weight: 600; font-size: 0.8rem; cursor: pointer;">Entrar no Painel</button>
         </div>
     `;
@@ -234,6 +222,7 @@ async function carregarPainelAdminCompleto() {
             </div>
         `).join('');
 
+        document.querySelectorAll(".btn-aprovar").files = ... // standard event delegation or query selection
         document.querySelectorAll(".btn-aprovar").forEach(btn => {
             btn.addEventListener("click", () => alterarEstadoPrestador(btn.getAttribute("data-id"), 'aprovado'));
         });
@@ -272,7 +261,7 @@ async function carregarPrestadoresAprovados() {
             .from('prestadores')
             .select('*')
             .eq('status', 'aprovado')
-            .order('criado_em', { ascending: false });
+            .order('created_at', { ascending: false });
 
         if (error) throw error;
 
@@ -280,7 +269,7 @@ async function carregarPrestadoresAprovados() {
         
         container.innerHTML = "";
         if (prestadoresCloud.length === 0) {
-            container.innerHTML = `<p style="text-align: center; color: #64748b; padding: 20px; font-size: 0.85rem;">Nenhum prestador aprovado de momento.</p>`;
+            container.innerHTML = `<p style="text-align: center; color: #64748b; padding: 10px; font-size: 0.85rem;">Nenhum prestador aprovado de momento.</p>`;
             return;
         }
 
