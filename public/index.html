@@ -1,140 +1,118 @@
 <!DOCTYPE html>
-<html lang="pt" data-theme="light">
+<html lang="pt" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Huambo Plus — Marketplace Inteligente</title>
-    <!-- CSS Externo e Fontes -->
+    <title>Huambo Plus - Plataforma de Serviços</title>
+    
+    <!-- CSS Principal -->
+    <link rel="stylesheet" href="/style.css">
+    
+    <!-- FontAwesome para Ícones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Leaflet.js para Mapa -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
 
-    <!-- Cabeçalho -->
-    <header class="header-main">
-        <div class="container header-container">
-            <h1 class="logo">Huambo<span>Plus</span></h1>
-            
-            <nav class="nav-links">
-                <button class="nav-btn active" data-tab="busca"><i class="fa-solid fa-magnifying-glass"></i> <span data-i18n="navBusca">Buscar</span></button>
-                <button class="nav-btn" data-tab="gritos"><i class="fa-solid fa-bullhorn"></i> <span data-i18n="navGritos">Mural de Gritos</span></button>
-                <button class="nav-btn" data-tab="registo"><i class="fa-solid fa-user-plus"></i> <span data-i18n="navRegisto">Registo Prestador</span></button>
-            </nav>
-
-            <div class="header-controls">
-                <select id="seletor-idioma">
-                    <option value="PT">PT</option>
-                    <option value="EN">EN</option>
-                    <option value="UMB">UMB</option>
-                </select>
-                <button id="btn-tema" title="Alternar Tema"><i class="fa-solid fa-moon"></i></button>
-                <button id="btn-login-modal" class="btn-primary" data-i18n="btnLogin">Entrar</button>
-            </div>
+    <!-- Navegação -->
+    <nav class="navbar">
+        <div class="logo">Huambo<span>Plus</span></div>
+        <div class="nav-links">
+            <button class="nav-btn active" data-tab="busca" data-i18n="navBusca">Buscar</button>
+            <button class="nav-btn" data-tab="gritos" data-i18n="navGritos">Mural de Gritos</button>
+            <button class="nav-btn" data-tab="registo" data-i18n="navRegisto">Registo Prestador</button>
         </div>
-    </header>
+        <div class="nav-actions">
+            <select id="seletor-idioma">
+                <option value="PT">PT</option>
+                <option value="EN">EN</option>
+                <option value="UMB">UMB</option>
+            </select>
+            <button id="btn-tema" title="Alternar Tema"><i class="fa-solid fa-moon"></i></button>
+            <button id="btn-login-modal" class="btn-primary" data-i18n="btnLogin">Entrar</button>
+        </div>
+    </nav>
 
-    <!-- Conteúdo Principal -->
-    <main class="container content-area">
-
-        <!-- Aba 1: Busca e Mapa -->
+    <main class="container">
+        <!-- ABA 1: BUSCA -->
         <section id="aba-busca" class="tab-content active">
-            <div class="search-bar-container">
-                <div class="input-group">
-                    <i class="fa-solid fa-magnifying-glass icon"></i>
-                    <input type="text" id="campo-busca" placeholder="Ex: Canalizador, Eletricista..." data-i18n-placeholder="searchPlaceholder">
-                </div>
-                <div class="input-group">
-                    <select id="filtro-municipio">
-                        <option value="" data-i18n="todosMunicipios">Todos os Municípios</option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <select id="filtro-categoria">
-                        <option value="" data-i18n="todasCategorias">Todas as Categorias</option>
-                    </select>
-                </div>
+            <div class="search-bar">
+                <input type="text" id="campo-busca" placeholder="Ex: Canalizador, Eletricista..." data-i18n-placeholder="searchPlaceholder">
+                <select id="filtro-municipio">
+                    <option value="" data-i18n="todosMunicipios">Todos os Municípios</option>
+                </select>
+                <select id="filtro-categoria">
+                    <option value="" data-i18n="todasCategorias">Todas as Categorias</option>
+                </select>
                 <button id="btn-executar-busca" class="btn-primary" data-i18n="btnPesquisar">Pesquisar</button>
             </div>
 
             <div class="view-toggle">
-                <button id="btn-view-cards" class="active"><i class="fa-solid fa-th-large"></i> <span data-i18n="viewLista">Lista</span></button>
-                <button id="btn-view-map"><i class="fa-solid fa-map-location-dot"></i> <span data-i18n="viewMapa">Mapa</span></button>
+                <button id="btn-view-cards" class="active" data-i18n="viewLista">Lista</button>
+                <button id="btn-view-map" data-i18n="viewMapa">Mapa</button>
             </div>
 
+            <!-- Lista de Prestadores -->
             <div id="container-cards" class="cards-grid"></div>
+
+            <!-- Contentor do Mapa -->
             <div id="map-container" class="map-hidden">
                 <div id="map"></div>
             </div>
         </section>
 
-        <!-- Aba 2: Mural de Gritos -->
+        <!-- ABA 2: MURAL DE GRITOS -->
         <section id="aba-gritos" class="tab-content">
-            <div class="gritos-header">
-                <h2 data-i18n="gritosTitulo">Mural de Pedidos Rápidos (Gritos)</h2>
-                <button id="btn-novo-grito" class="btn-accent"><i class="fa-solid fa-plus"></i> <span data-i18n="btnPublicarGrito">Publicar Grito</span></button>
-            </div>
-            <div id="container-gritos" class="gritos-list"></div>
+            <h2 data-i18n="gritosTitulo">Mural de Pedidos Rápidos (Gritos)</h2>
+            <div id="container-gritos"></div>
         </section>
 
-        <!-- Aba 3: Registo de Prestador -->
+        <!-- ABA 3: REGISTO DE PRESTADOR -->
         <section id="aba-registo" class="tab-content">
-            <div class="form-card">
-                <h2 data-i18n="registoTitulo">Candidatura de Prestador de Serviços</h2>
-                <form id="form-prestador">
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="reg-nome" data-i18n="labelNome">Nome Completo</label>
-                            <input type="text" id="reg-nome" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="reg-nif">NIF</label>
-                            <input type="text" id="reg-nif" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="reg-categoria" data-i18n="labelCategoria">Categoria</label>
-                            <select id="reg-categoria" required></select>
-                        </div>
-                        <div class="form-group">
-                            <label for="reg-municipio" data-i18n="labelMunicipio">Município</label>
-                            <select id="reg-municipio" required></select>
-                        </div>
-                        <div class="form-group">
-                            <label for="reg-telefone" data-i18n="labelTelefone">Telefone / WhatsApp</label>
-                            <input type="tel" id="reg-telefone" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="reg-taxa" data-i18n="labelTaxa">Taxa de Deslocação (Kz)</label>
-                            <input type="number" id="reg-taxa" min="0" value="0">
-                        </div>
-                    </div>
-                    <button type="submit" class="btn-primary btn-block" data-i18n="btnSubmeter">Submeter Candidatura</button>
-                </form>
-            </div>
+            <h2 data-i18n="registoTitulo">Candidatura de Prestador de Serviços</h2>
+            <form id="form-prestador" class="form-box">
+                <label data-i18n="labelNome">Nome Completo</label>
+                <input type="text" id="reg-nome" required>
+
+                <label>NIF</label>
+                <input type="text" id="reg-nif">
+
+                <label data-i18n="labelCategoria">Categoria / Profissão</label>
+                <select id="reg-categoria" required></select>
+
+                <label data-i18n="labelMunicipio">Município</label>
+                <select id="reg-municipio" required></select>
+
+                <label data-i18n="labelTelefone">Telefone / WhatsApp</label>
+                <input type="text" id="reg-telefone" required>
+
+                <label data-i18n="labelTaxa">Taxa de Deslocação (Kz)</label>
+                <input type="number" id="reg-taxa" value="0">
+
+                <button type="submit" class="btn-primary" data-i18n="btnSubmeter">Submeter Candidatura</button>
+            </form>
         </section>
     </main>
 
-    <!-- Modal de Login -->
+    <!-- MODAL DE LOGIN -->
     <div id="modal-login" class="modal">
         <div class="modal-content">
             <span class="close-modal">&times;</span>
             <h2 data-i18n="loginTitulo">Acessar Conta</h2>
             <form id="form-login">
-                <div class="form-group">
-                    <label for="login-email">Email</label>
-                    <input type="email" id="login-email" required>
-                </div>
-                <div class="form-group">
-                    <label for="login-senha" data-i18n="labelSenha">Senha</label>
-                    <input type="password" id="login-senha" required>
-                </div>
-                <button type="submit" class="btn-primary btn-block" data-i18n="btnLogin">Entrar</button>
+                <label>Email</label>
+                <input type="email" id="login-email" required>
+                <label data-i18n="labelSenha">Senha</label>
+                <input type="password" id="login-senha" required>
+                <button type="submit" class="btn-primary" data-i18n="btnLogin">Entrar</button>
             </form>
         </div>
     </div>
 
-    <!-- JavaScript Externo e Scripts da Aplicação -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="app.js"></script>
+    <!-- Script Principal -->
+    <script src="/app.js"></script>
 </body>
 </html>
