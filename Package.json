@@ -1,0 +1,16 @@
+{
+  "name": "huambo-plus-backend",
+  "version": "1.0.0",
+  "description": "Backend do Huambo Plus com Supabase e Socket.io",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2"
+  }
+}
