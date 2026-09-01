@@ -1,6 +1,68 @@
 document.addEventListener('DOMContentLoaded', () => {
+    let map = null;
+    let googleMarkers = [];
+    let prestadoresAtuais = [];
+
     // ------------------------------------------------------------------
-    // 1. ALTERNÂNCIA DE ABAS
+    // 1. INICIALIZAÇÃO DO GOOGLE MAPS
+    // ------------------------------------------------------------------
+    window.initMap = function() {
+        const huamboCoords = { lat: -12.7761, lng: 15.7392 }; // Centro do Huambo
+        
+        const mapElement = document.getElementById('map');
+        if (mapElement && typeof google !== 'undefined') {
+            map = new google.maps.Map(mapElement, {
+                zoom: 13,
+                center: huamboCoords,
+                mapTypeControl: false,
+                streetViewControl: false
+            });
+
+            if (prestadoresAtuais.length > 0) {
+                adicionarMarcadoresGoogleMaps(prestadoresAtuais);
+            }
+        }
+    };
+
+    function limparMarcadores() {
+        googleMarkers.forEach(marker => marker.setMap(null));
+        googleMarkers = [];
+    }
+
+    function adicionarMarcadoresGoogleMaps(lista) {
+        if (!map || typeof google === 'undefined') return;
+        limparMarcadores();
+
+        lista.forEach(p => {
+            const lat = parseFloat(p.lat) || (-12.7761 + (Math.random() - 0.5) * 0.04);
+            const lng = parseFloat(p.lng) || (15.7392 + (Math.random() - 0.5) * 0.04);
+
+            const marker = new google.maps.Marker({
+                position: { lat, lng },
+                map: map,
+                title: p.nome
+            });
+
+            const infoWindow = new google.maps.InfoWindow({
+                content: `
+                    <div style="color: #000; padding: 5px;">
+                        <strong>${p.nome}</strong><br>
+                        <span>${p.categoria}</span><br>
+                        <small>${p.municipio}</small>
+                    </div>
+                `
+            });
+
+            marker.addListener('click', () => {
+                infoWindow.open(map, marker);
+            });
+
+            googleMarkers.push(marker);
+        });
+    }
+
+    // ------------------------------------------------------------------
+    // 2. ALTERNÂNCIA DE ABAS
     // ------------------------------------------------------------------
     const navButtons = document.querySelectorAll('.nav-btn');
     const tabContents = document.querySelectorAll('.tab-content');
@@ -19,9 +81,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 activeSection.classList.add('active');
             }
 
-            if (targetTab === 'busca' && map) {
-                setTimeout(() => map.invalidateSize(), 200);
-            }
             if (targetTab === 'gritos') {
                 carregarGritos();
             }
@@ -29,7 +88,34 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ------------------------------------------------------------------
-    // 2. MODAL DE LOGIN E TEMAS
+    // 3. ALTERNADOR DE VISUALIZAÇÃO (LISTA / MAPA)
+    // ------------------------------------------------------------------
+    const btnViewCards = document.getElementById('btn-view-cards');
+    const btnViewMap = document.getElementById('btn-view-map');
+    const containerCards = document.getElementById('container-cards');
+    const containerMap = document.getElementById('map-container');
+
+    if (btnViewCards && btnViewMap) {
+        btnViewCards.addEventListener('click', () => {
+            btnViewCards.classList.add('active');
+            btnViewMap.classList.remove('active');
+            containerCards.style.display = 'grid';
+            containerMap.classList.add('map-hidden');
+        });
+
+        btnViewMap.addEventListener('click', () => {
+            btnViewMap.classList.add('active');
+            btnViewCards.classList.remove('active');
+            containerCards.style.display = 'none';
+            containerMap.classList.remove('map-hidden');
+            if (map && typeof google !== 'undefined') {
+                google.maps.event.trigger(map, 'resize');
+            }
+        });
+    }
+
+    // ------------------------------------------------------------------
+    // 4. MODAL DE LOGIN E TEMAS
     // ------------------------------------------------------------------
     const modalLogin = document.getElementById('modal-login');
     const btnAbrirModal = document.getElementById('btn-login-modal');
@@ -56,44 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ------------------------------------------------------------------
-    // 3. MAPA INTERATIVO LEAFLET
-    // ------------------------------------------------------------------
-    let map = null;
-    let markersGroup = null;
-    const mapDiv = document.getElementById('map');
-    
-    if (mapDiv && typeof L !== 'undefined') {
-        map = L.map('map').setView([-12.7761, 15.7392], 13);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap'
-        }).addTo(map);
-        markersGroup = L.layerGroup().addTo(map);
-    }
-
-    const btnViewCards = document.getElementById('btn-view-cards');
-    const btnViewMap = document.getElementById('btn-view-map');
-    const containerCards = document.getElementById('container-cards');
-    const containerMap = document.getElementById('map-container');
-
-    if (btnViewCards && btnViewMap) {
-        btnViewCards.addEventListener('click', () => {
-            btnViewCards.classList.add('active');
-            btnViewMap.classList.remove('active');
-            containerCards.style.display = 'grid';
-            containerMap.classList.add('map-hidden');
-        });
-
-        btnViewMap.addEventListener('click', () => {
-            btnViewMap.classList.add('active');
-            btnViewCards.classList.remove('active');
-            containerCards.style.display = 'none';
-            containerMap.classList.remove('map-hidden');
-            if (map) setTimeout(() => map.invalidateSize(), 200);
-        });
-    }
-
-    // ------------------------------------------------------------------
-    // 4. PESQUISA E RENDERING DE PRESTADORES
+    // 5. PESQUISA E RENDERING DE PRESTADORES
     // ------------------------------------------------------------------
     const btnBusca = document.getElementById('btn-executar-busca');
     
@@ -107,6 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetch(url);
             const prestadores = await res.json();
+            prestadoresAtuais = prestadores;
             renderizarPrestadores(prestadores);
         } catch (err) {
             console.error("Erro ao carregar prestadores:", err);
@@ -115,10 +165,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderizarPrestadores(lista) {
         containerCards.innerHTML = '';
-        if (markersGroup) markersGroup.clearLayers();
 
         if (!Array.isArray(lista) || lista.length === 0) {
             containerCards.innerHTML = '<p style="grid-column: 1/-1; text-align: center; opacity: 0.7;">Nenhum prestador encontrado.</p>';
+            limparMarcadores();
             return;
         }
 
@@ -137,22 +187,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 </a>
             `;
             containerCards.appendChild(card);
-
-            if (map && markersGroup) {
-                const lat = p.lat || (-12.7761 + (Math.random() - 0.5) * 0.04);
-                const lng = p.lng || (15.7392 + (Math.random() - 0.5) * 0.04);
-                L.marker([lat, lng])
-                    .bindPopup(`<b>${p.nome}</b><br>${p.categoria}<br>${p.municipio}`)
-                    .addTo(markersGroup);
-            }
         });
+
+        adicionarMarcadoresGoogleMaps(lista);
     }
 
     if (btnBusca) btnBusca.addEventListener('click', buscarPrestadores);
     buscarPrestadores();
 
     // ------------------------------------------------------------------
-    // 5. MURAL DE GRITOS
+    // 6. MURAL DE GRITOS
     // ------------------------------------------------------------------
     const btnNovoGrito = document.getElementById('btn-novo-grito');
     const formNovoGrito = document.getElementById('form-novo-grito');
@@ -226,7 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ------------------------------------------------------------------
-    // 6. REGISTO DE PRESTADOR
+    // 7. REGISTO DE PRESTADOR
     // ------------------------------------------------------------------
     const formPrestador = document.getElementById('form-prestador');
     if (formPrestador) {
@@ -261,7 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ------------------------------------------------------------------
-    // 7. LOGIN (COMUM E ADMINISTRADOR)
+    // 8. LOGIN (COMUM E ADMINISTRADOR)
     // ------------------------------------------------------------------
     const formLogin = document.getElementById('form-login');
     if (formLogin) {
