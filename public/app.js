@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. FÓRMULA DE HAVERSINE (Cálculo preciso de distância em km)
     // ------------------------------------------------------------------
     function calcularDistanciaKm(lat1, lon1, lat2, lon2) {
-        const R = 6371; // Raio da Terra em km
+        const R = 6371;
         const dLat = (lat2 - lat1) * Math.PI / 180;
         const dLon = (lon2 - lon1) * Math.PI / 180;
         const a = 
@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ------------------------------------------------------------------
-    // 3. ALTERNÂNCIA DE ABAS
+    // 3. ALTERNÂNCIA DE ABAS (Bottom Nav & Top Nav)
     // ------------------------------------------------------------------
     const navButtons = document.querySelectorAll('.nav-btn');
     const tabContents = document.querySelectorAll('.tab-content');
@@ -77,10 +77,17 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const targetTab = button.getAttribute('data-tab');
 
-            navButtons.forEach(btn => btn.classList.remove('active'));
+            navButtons.forEach(btn => {
+                btn.classList.remove('active');
+                btn.style.color = 'var(--text-muted)';
+            });
             tabContents.forEach(tab => tab.classList.remove('active'));
 
-            button.classList.add('active');
+            document.querySelectorAll(`[data-tab="${targetTab}"]`).forEach(btn => {
+                btn.classList.add('active');
+                btn.style.color = 'var(--primary-color)';
+            });
+
             const activeSection = document.getElementById(`aba-${targetTab}`);
             if (activeSection) {
                 activeSection.classList.add('active');
@@ -93,7 +100,29 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ------------------------------------------------------------------
-    // 4. ALTERNADOR DE VISUALIZAÇÃO (LISTA / MAPA)
+    // 4. SELEÇÃO DE CATEGORIAS VISUAIS (Grelha)
+    // ------------------------------------------------------------------
+    const catCards = document.querySelectorAll('.cat-card');
+    const inputCategoria = document.getElementById('filtro-categoria');
+
+    catCards.forEach(card => {
+        card.addEventListener('click', () => {
+            const categoriaSelecionada = card.getAttribute('data-cat');
+            
+            catCards.forEach(c => c.style.borderColor = 'var(--border-color)');
+            
+            if (inputCategoria.value === categoriaSelecionada) {
+                inputCategoria.value = '';
+            } else {
+                inputCategoria.value = categoriaSelecionada;
+                card.style.borderColor = 'var(--primary-color)';
+            }
+            buscarPrestadoresComGPS();
+        });
+    });
+
+    // ------------------------------------------------------------------
+    // 5. ALTERNADOR DE VISUALIZAÇÃO (LISTA / MAPA)
     // ------------------------------------------------------------------
     const btnViewCards = document.getElementById('btn-view-cards');
     const btnViewMap = document.getElementById('btn-view-map');
@@ -122,7 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ------------------------------------------------------------------
-    // 5. MODAL DE LOGIN E TEMAS
+    // 6. MODAL DE LOGIN E TEMAS
     // ------------------------------------------------------------------
     const modalLogin = document.getElementById('modal-login');
     const btnAbrirModal = document.getElementById('btn-login-modal');
@@ -149,16 +178,41 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ------------------------------------------------------------------
-    // 6. PESQUISA COM ORDENAÇÃO GPS AUTOMÁTICA
+    // 7. PESQUISA INTELIGENTE COM SINÓNIMOS E ORDENAÇÃO GPS
     // ------------------------------------------------------------------
     const btnBusca = document.getElementById('btn-executar-busca');
+    const campoBusca = document.getElementById('campo-busca');
+
+    const dicionarioSinonimos = {
+        "encanador": "canalizador",
+        "conserto": "reparo",
+        "arranjo": "reparo",
+        "reparações": "reparos",
+        "computador": "informática",
+        "pc": "informática",
+        "laptop": "informática",
+        "explicador": "explicações",
+        "professor": "explicações",
+        "aulas": "explicações",
+        "luz": "eletricista",
+        "eletricidade": "eletricista",
+        "torneira": "canalizador",
+        "fuga": "canalizador"
+    };
+
+    function expandirTermoComSinonimos(termo) {
+        if (!termo) return "";
+        const termoLimpo = termo.trim().toLowerCase();
+        return dicionarioSinonimos[termoLimpo] || termoLimpo;
+    }
     
     async function buscarPrestadoresComGPS() {
-        const q = document.getElementById('campo-busca').value;
+        const inputTexto = campoBusca.value;
+        const termoExpandido = expandirTermoComSinonimos(inputTexto);
         const municipio = document.getElementById('filtro-municipio').value;
-        const categoria = document.getElementById('filtro-categoria').value;
+        const categoria = inputCategoria.value;
 
-        const url = `/api/prestadores?q=${encodeURIComponent(q)}&municipio=${encodeURIComponent(municipio)}&categoria=${encodeURIComponent(categoria)}`;
+        const url = `/api/prestadores?q=${encodeURIComponent(termoExpandido)}&municipio=${encodeURIComponent(municipio)}&categoria=${encodeURIComponent(categoria)}`;
 
         try {
             const res = await fetch(url);
@@ -218,12 +272,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (btnBusca) btnBusca.addEventListener('click', buscarPrestadoresComGPS);
+    if (campoBusca) {
+        campoBusca.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') buscarPrestadoresComGPS();
+        });
+    }
     
     inicializarMapa();
     buscarPrestadoresComGPS();
 
     // ------------------------------------------------------------------
-    // 7. MURAL DE GRITOS
+    // 8. MURAL DE GRITOS
     // ------------------------------------------------------------------
     const btnNovoGrito = document.getElementById('btn-novo-grito');
     const formNovoGrito = document.getElementById('form-novo-grito');
@@ -297,7 +356,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ------------------------------------------------------------------
-    // 8. REGISTO DE PRESTADOR COM CAPTURA AUTOMÁTICA DE GPS
+    // 9. REGISTO DE PRESTADOR COM CAPTURA AUTOMÁTICA DE GPS
     // ------------------------------------------------------------------
     const formPrestador = document.getElementById('form-prestador');
     if (formPrestador) {
@@ -339,7 +398,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         enviarRegisto(position.coords.latitude, position.coords.longitude);
                     },
                     () => {
-                        enviarRegisto(-12.7761, 15.7392); // Coordenada padrão de fallback
+                        enviarRegisto(-12.7761, 15.7392);
                     },
                     { enableHighAccuracy: true, timeout: 7000 }
                 );
@@ -350,7 +409,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ------------------------------------------------------------------
-    // 9. LOGIN (COMUM E ADMINISTRADOR)
+    // 10. LOGIN
     // ------------------------------------------------------------------
     const formLogin = document.getElementById('form-login');
     if (formLogin) {
