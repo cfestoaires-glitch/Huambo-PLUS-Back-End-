@@ -1,10 +1,89 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt">
 <head>
-    <title>Huambo Plus</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Huambo Plus — Marketplace Inteligente</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>🚀 Huambo Plus</h1>
-    <p>O servidor está a funcionar!</p>
+    <!-- Toast -->
+    <div id="toast" class="toast"></div>
+
+    <!-- SPLASH -->
+    <div id="splash" class="screen active">
+        <div class="logo"><i class="fas fa-store-alt"></i></div>
+        <h1>Huambo <span>Plus</span></h1>
+        <p id="splashSlogan">MARKETPLACE • SERVIÇOS • NEGÓCIOS</p>
+        <div class="subtitle" id="splashSub">Conectando Huambo ao mundo</div>
+        <div class="loader"></div>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="login" class="screen">
+        <div class="box">
+            <div class="header">
+                <div class="icon"><i class="fas fa-store-alt"></i></div>
+                <h2 id="loginTitle">Huambo Plus</h2>
+                <p id="loginSub">O maior marketplace da província</p>
+            </div>
+            <div class="login-tabs">
+                <button class="active" onclick="setLoginTipo('user')">Utilizador</button>
+                <button onclick="setLoginTipo('admin')">Administrador</button>
+            </div>
+            <div id="loginFields">
+                <div class="campo"><i class="fas fa-envelope"></i><input type="email" id="loginEmail" placeholder="Email" value="admin@email.com"></div>
+                <div class="campo"><i class="fas fa-lock"></i><input type="password" id="loginPassword" placeholder="Palavra-passe" value="123"></div>
+                <div id="adminCodeField" style="display:none;" class="campo"><i class="fas fa-key"></i><input type="password" id="loginAdminCode" placeholder="Código Admin"></div>
+            </div>
+            <button class="btn-login" onclick="handleLogin()"><i class="fas fa-arrow-right"></i> Entrar</button>
+            <button class="btn-register" onclick="handleRegister()"><i class="fas fa-user-plus"></i> Criar conta (demo)</button>
+            <div id="loginMsg" class="login-msg"></div>
+            <div class="demo-hint">Admin: admin@email.com / código: admin123</div>
+        </div>
+    </div>
+
+    <!-- MAIN -->
+    <div id="main" class="screen">
+        <div class="app-header">
+            <div class="logo"><i class="fas fa-store"></i> Huambo<span>Plus</span></div>
+            <div class="header-actions">
+                <div class="idioma-selector">
+                    <button class="active" data-lang="pt" onclick="mudarIdioma('pt')">PT</button>
+                    <button data-lang="en" onclick="mudarIdioma('en')">EN</button>
+                    <button data-lang="umb" onclick="mudarIdioma('umb')">UMB</button>
+                </div>
+                <button class="icon-btn" onclick="toggleDarkMode()"><i class="fas fa-moon" id="darkIcon"></i></button>
+                <button class="icon-btn" onclick="mudarTab('busca')"><i class="fas fa-search"></i></button>
+                <button class="icon-btn" onclick="mudarTab('favoritos')"><i class="fas fa-heart"></i><span class="badge" id="favBadge">0</span></button>
+                <button class="icon-btn" onclick="mudarTab('perfil')"><i class="fas fa-user-circle"></i></button>
+            </div>
+        </div>
+        <div id="mainContent" class="content"></div>
+        <div class="bottom-nav">
+            <button class="nav-item active" data-tab="home" onclick="mudarTab('home')"><i class="fas fa-home"></i><span>Início</span></button>
+            <button class="nav-item" data-tab="busca" onclick="mudarTab('busca')"><i class="fas fa-search"></i><span>Buscar</span></button>
+            <button class="nav-item" data-tab="gritos" onclick="mudarTab('gritos')"><i class="fas fa-bullhorn"></i><span>Gritos</span><span class="badge" id="gritoBadge">0</span></button>
+            <button class="nav-item" data-tab="central" onclick="mudarTab('central')"><i class="fas fa-briefcase"></i><span>Central</span></button>
+            <button class="nav-item" data-tab="perfil" onclick="mudarTab('perfil')"><i class="fas fa-user"></i><span>Perfil</span></button>
+        </div>
+    </div>
+
+    <!-- MODAIS -->
+    <div id="modalDetalhes" class="modal-overlay"><div class="modal-box"><button class="close" onclick="fecharModalDetalhes()">&times;</button><div id="detalhesConteudo"></div></div></div>
+    <div id="modalGrito" class="modal-overlay"><div class="modal-box"><h2><i class="fas fa-bullhorn" style="color:var(--laranja)"></i> Novo Grito</h2><input type="text" id="gritoTitulo" placeholder="Título" style="width:100%;padding:14px;border:1.5px solid var(--cinza-claro);border-radius:14px;margin:10px 0;"><textarea id="gritoDescricao" rows="3" placeholder="Descrição" style="width:100%;padding:14px;border:1.5px solid var(--cinza-claro);border-radius:14px;margin-bottom:10px;"></textarea><input type="text" id="gritoCategoria" placeholder="Categoria" style="width:100%;padding:14px;border:1.5px solid var(--cinza-claro);border-radius:14px;margin-bottom:10px;"><input type="text" id="gritoMunicipio" placeholder="Município" style="width:100%;padding:14px;border:1.5px solid var(--cinza-claro);border-radius:14px;margin-bottom:10px;"><div style="display:flex;gap:10px;"><button class="btn-cancel" onclick="fecharModalGrito()" style="flex:1;padding:14px;background:var(--cinza-claro);border:none;border-radius:14px;font-weight:600;">Cancelar</button><button class="btn-save" onclick="criarGrito()" style="flex:1;padding:14px;background:var(--laranja);color:#fff;border:none;border-radius:14px;font-weight:700;">Publicar</button></div></div></div>
+    <div id="modalAvaliar" class="modal-overlay"><div class="modal-box"><h2><i class="fas fa-star" style="color:var(--dourado)"></i> Avaliar</h2><p id="avaliarTarget" style="color:var(--cinza-texto);margin-bottom:8px;"></p><select id="avaliarNota" style="width:100%;padding:10px;border:1.5px solid var(--cinza-claro);border-radius:14px;margin-bottom:8px;"><option value="5">★★★★★</option><option value="4">★★★★☆</option><option value="3">★★★☆☆</option><option value="2">★★☆☆☆</option><option value="1">★☆☆☆☆</option></select><textarea id="avaliarTexto" placeholder="Comentário" style="width:100%;padding:10px;border:1.5px solid var(--cinza-claro);border-radius:14px;margin-bottom:8px;"></textarea><button onclick="enviarAvaliacao()" style="width:100%;padding:12px;background:var(--dourado);color:#fff;border:none;border-radius:16px;font-weight:700;">Enviar</button><button onclick="fecharModalAvaliar()" style="width:100%;padding:10px;background:transparent;border:none;color:var(--cinza-texto);cursor:pointer;margin-top:6px;">Cancelar</button></div></div>
+    <div id="modalChat" class="modal-overlay"><div class="modal-box"><button class="close" onclick="fecharModalChat()">&times;</button><h2><i class="fas fa-comment-dots" style="color:var(--azul)"></i> <span id="chatTitulo">Chat</span></h2><div id="chatContainer" class="chat-container"></div><div class="chat-input"><input type="text" id="chatInput" placeholder="Escreva uma mensagem..."><button onclick="enviarMensagemChat()"><i class="fas fa-paper-plane"></i></button></div></div></div>
+    <div id="modalRegistoPrestador" class="modal-overlay"><div class="modal-box"><button class="close" onclick="fecharModalRegistoPrestador()">&times;</button><h2><i class="fas fa-user-tie" style="color:var(--verde)"></i> Registar Prestador</h2><form id="formRegistoPrestador"><div class="form-group"><label>Nome</label><input type="text" id="regNome" required></div><div class="form-group"><label>Profissão</label><input type="text" id="regProfissao" required></div><div class="form-group"><label>Categoria</label><select id="regCategoria"><option value="Saúde">Saúde</option><option value="Construção">Construção</option><option value="Educação">Educação</option><option value="Tecnologia">Tecnologia</option><option value="Serviços">Serviços</option><option value="Beleza">Beleza</option></select></div><div class="form-group"><label>Município</label><select id="regMunicipio"><option value="Huambo">Huambo</option><option value="Caála">Caála</option><option value="Bailundo">Bailundo</option></select></div><div class="form-group"><label>Telefone</label><input type="tel" id="regTelefone" required></div><div class="form-group"><label>Descrição</label><textarea id="regDescricao"></textarea></div><div class="form-group"><label>Selfie</label><input type="file" id="regSelfie" accept="image/*" required></div><div class="form-group"><label>BI</label><input type="file" id="regBI" accept="image/*" required></div><button type="submit" class="btn-submit">Enviar</button></form></div></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
