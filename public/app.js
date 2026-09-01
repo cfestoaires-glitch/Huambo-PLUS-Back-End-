@@ -3,12 +3,35 @@ document.addEventListener('DOMContentLoaded', () => {
     let markersGroup = null;
 
     // ------------------------------------------------------------------
-    // 1. INICIALIZAÇÃO DO LEAFLET (OPENSTREETMAP)
+    // 1. FÓRMULA DE HAVERSINE (Cálculo preciso de distância em km)
+    // ------------------------------------------------------------------
+    function calcularDistanciaKm(lat1, lon1, lat2, lon2) {
+        const R = 6371; // Raio da Terra em km
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = 
+            Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
+    }
+
+    function ordenarPrestadoresPorProximidade(lista, userLat, userLon) {
+        return lista.map(p => {
+            const pLat = parseFloat(p.lat) || -12.7761;
+            const pLon = parseFloat(p.lng) || 15.7392;
+            const distancia = calcularDistanciaKm(userLat, userLon, pLat, pLon);
+            return { ...p, distancia };
+        }).sort((a, b) => a.distancia - b.distancia);
+    }
+
+    // ------------------------------------------------------------------
+    // 2. INICIALIZAÇÃO DO LEAFLET (OPENSTREETMAP)
     // ------------------------------------------------------------------
     function inicializarMapa() {
         const mapDiv = document.getElementById('map');
         if (mapDiv && typeof L !== 'undefined' && !map) {
-            // Centro no Huambo
             map = L.map('map').setView([-12.7761, 15.7392], 13);
             
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -25,19 +48,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!markersGroup) return;
 
         markersGroup.clearLayers();
-
         if (!Array.isArray(lista)) return;
 
         lista.forEach(p => {
-            const lat = parseFloat(p.lat) || (-12.7761 + (Math.random() - 0.5) * 0.04);
-            const lng = parseFloat(p.lng) || (15.7392 + (Math.random() - 0.5) * 0.04);
+            const lat = parseFloat(p.lat) || -12.7761;
+            const lng = parseFloat(p.lng) || 15.7392;
 
             const marker = L.marker([lat, lng]);
             marker.bindPopup(`
                 <div style="color: #000; padding: 2px;">
                     <strong>${p.nome}</strong><br>
                     <span>${p.categoria}</span><br>
-                    <small>${p.municipio}</small>
+                    <small>${p.municipio} ${p.distancia !== undefined ? `(${p.distancia.toFixed(1)} km)` : ''}</small>
                 </div>
             `);
             markersGroup.addLayer(marker);
@@ -45,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ------------------------------------------------------------------
-    // 2. ALTERNÂNCIA DE ABAS
+    // 3. ALTERNÂNCIA DE ABAS
     // ------------------------------------------------------------------
     const navButtons = document.querySelectorAll('.nav-btn');
     const tabContents = document.querySelectorAll('.tab-content');
@@ -71,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ------------------------------------------------------------------
-    // 3. ALTERNADOR DE VISUALIZAÇÃO (LISTA / MAPA)
+    // 4. ALTERNADOR DE VISUALIZAÇÃO (LISTA / MAPA)
     // ------------------------------------------------------------------
     const btnViewCards = document.getElementById('btn-view-cards');
     const btnViewMap = document.getElementById('btn-view-map');
@@ -100,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ------------------------------------------------------------------
-    // 4. MODAL DE LOGIN E TEMAS
+    // 5. MODAL DE LOGIN E TEMAS
     // ------------------------------------------------------------------
     const modalLogin = document.getElementById('modal-login');
     const btnAbrirModal = document.getElementById('btn-login-modal');
@@ -127,11 +149,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ------------------------------------------------------------------
-    // 5. PESQUISA E RENDERING DE PRESTADORES
+    // 6. PESQUISA COM ORDENAÇÃO GPS AUTOMÁTICA
     // ------------------------------------------------------------------
     const btnBusca = document.getElementById('btn-executar-busca');
     
-    async function buscarPrestadores() {
+    async function buscarPrestadoresComGPS() {
         const q = document.getElementById('campo-busca').value;
         const municipio = document.getElementById('filtro-municipio').value;
         const categoria = document.getElementById('filtro-categoria').value;
@@ -140,8 +162,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const res = await fetch(url);
-            const prestadores = await res.json();
-            renderizarPrestadores(prestadores);
+            let prestadores = await res.json();
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const userLat = position.coords.latitude;
+                        const userLon = position.coords.longitude;
+                        prestadores = ordenarPrestadoresPorProximidade(prestadores, userLat, userLon);
+                        renderizarPrestadores(prestadores);
+                    },
+                    () => {
+                        renderizarPrestadores(prestadores);
+                    },
+                    { timeout: 7000, enableHighAccuracy: true }
+                );
+            } else {
+                renderizarPrestadores(prestadores);
+            }
         } catch (err) {
             console.error("Erro ao carregar prestadores:", err);
         }
@@ -159,11 +197,14 @@ document.addEventListener('DOMContentLoaded', () => {
         lista.forEach(p => {
             const card = document.createElement('div');
             card.className = 'card-prestador';
+            const distanciaTexto = p.distancia !== undefined ? `<p><strong><i class="fa-solid fa-route"></i> Distância:</strong> ${p.distancia.toFixed(1)} km</p>` : '';
+            
             card.innerHTML = `
                 <div>
                     <h3>${p.nome}</h3>
                     <p><strong><i class="fa-solid fa-briefcase"></i> Profissão:</strong> ${p.categoria}</p>
                     <p><strong><i class="fa-solid fa-location-dot"></i> Município:</strong> ${p.municipio}</p>
+                    ${distanciaTexto}
                     <p><strong><i class="fa-solid fa-tag"></i> Deslocação:</strong> ${p.taxa_deslocacao || p.taxa || 0} Kz</p>
                 </div>
                 <a href="https://wa.me/${p.telefone ? p.telefone.replace(/\D/g,'') : ''}" target="_blank" class="btn-primary" style="display: block; margin-top: 15px; text-decoration: none; text-align: center;">
@@ -176,14 +217,13 @@ document.addEventListener('DOMContentLoaded', () => {
         adicionarMarcadoresLeaflet(lista);
     }
 
-    if (btnBusca) btnBusca.addEventListener('click', buscarPrestadores);
+    if (btnBusca) btnBusca.addEventListener('click', buscarPrestadoresComGPS);
     
-    // Inicialização ao carregar
     inicializarMapa();
-    buscarPrestadores();
+    buscarPrestadoresComGPS();
 
     // ------------------------------------------------------------------
-    // 6. MURAL DE GRITOS
+    // 7. MURAL DE GRITOS
     // ------------------------------------------------------------------
     const btnNovoGrito = document.getElementById('btn-novo-grito');
     const formNovoGrito = document.getElementById('form-novo-grito');
@@ -257,42 +297,60 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ------------------------------------------------------------------
-    // 7. REGISTO DE PRESTADOR
+    // 8. REGISTO DE PRESTADOR COM CAPTURA AUTOMÁTICA DE GPS
     // ------------------------------------------------------------------
     const formPrestador = document.getElementById('form-prestador');
     if (formPrestador) {
-        formPrestador.addEventListener('submit', async (e) => {
+        formPrestador.addEventListener('submit', (e) => {
             e.preventDefault();
-            const payload = {
-                nome: document.getElementById('reg-nome').value,
-                nif: document.getElementById('reg-nif').value,
-                categoria: document.getElementById('reg-categoria').value,
-                municipio: document.getElementById('reg-municipio').value,
-                telefone: document.getElementById('reg-telefone').value,
-                taxa: document.getElementById('reg-taxa').value
-            };
 
-            try {
-                const res = await fetch('/api/prestadores', {
+            const enviarRegisto = (lat, lng) => {
+                const payload = {
+                    nome: document.getElementById('reg-nome').value,
+                    nif: document.getElementById('reg-nif').value,
+                    categoria: document.getElementById('reg-categoria').value,
+                    municipio: document.getElementById('reg-municipio').value,
+                    telefone: document.getElementById('reg-telefone').value,
+                    taxa: document.getElementById('reg-taxa').value,
+                    lat: lat,
+                    lng: lng
+                };
+
+                fetch('/api/prestadores', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
-                });
-                if (res.ok) {
-                    alert('Candidatura submetida com sucesso!');
-                    formPrestador.reset();
-                    buscarPrestadores();
-                } else {
-                    alert('Erro ao guardar no servidor.');
-                }
-            } catch (err) {
-                alert('Erro de conexão ao servidor.');
+                })
+                .then(res => {
+                    if (res.ok) {
+                        alert('Candidatura submetida com sucesso com coordenadas GPS!');
+                        formPrestador.reset();
+                        buscarPrestadoresComGPS();
+                    } else {
+                        alert('Erro ao guardar no servidor.');
+                    }
+                })
+                .catch(() => alert('Erro de conexão ao servidor.'));
+            };
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        enviarRegisto(position.coords.latitude, position.coords.longitude);
+                    },
+                    () => {
+                        enviarRegisto(-12.7761, 15.7392); // Coordenada padrão de fallback
+                    },
+                    { enableHighAccuracy: true, timeout: 7000 }
+                );
+            } else {
+                enviarRegisto(-12.7761, 15.7392);
             }
         });
     }
 
     // ------------------------------------------------------------------
-    // 8. LOGIN (COMUM E ADMINISTRADOR)
+    // 9. LOGIN (COMUM E ADMINISTRADOR)
     // ------------------------------------------------------------------
     const formLogin = document.getElementById('form-login');
     if (formLogin) {
