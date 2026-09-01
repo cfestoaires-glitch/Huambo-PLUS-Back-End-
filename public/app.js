@@ -1,63 +1,46 @@
 document.addEventListener('DOMContentLoaded', () => {
     let map = null;
-    let googleMarkers = [];
-    let prestadoresAtuais = [];
+    let markersGroup = null;
 
     // ------------------------------------------------------------------
-    // 1. INICIALIZAÇÃO DO GOOGLE MAPS
+    // 1. INICIALIZAÇÃO DO LEAFLET (OPENSTREETMAP)
     // ------------------------------------------------------------------
-    window.initMap = function() {
-        const huamboCoords = { lat: -12.7761, lng: 15.7392 }; // Centro do Huambo
-        
-        const mapElement = document.getElementById('map');
-        if (mapElement && typeof google !== 'undefined') {
-            map = new google.maps.Map(mapElement, {
-                zoom: 13,
-                center: huamboCoords,
-                mapTypeControl: false,
-                streetViewControl: false
-            });
+    function inicializarMapa() {
+        const mapDiv = document.getElementById('map');
+        if (mapDiv && typeof L !== 'undefined' && !map) {
+            // Centro no Huambo
+            map = L.map('map').setView([-12.7761, 15.7392], 13);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
 
-            if (prestadoresAtuais.length > 0) {
-                adicionarMarcadoresGoogleMaps(prestadoresAtuais);
-            }
+            markersGroup = L.layerGroup().addTo(map);
         }
-    };
-
-    function limparMarcadores() {
-        googleMarkers.forEach(marker => marker.setMap(null));
-        googleMarkers = [];
     }
 
-    function adicionarMarcadoresGoogleMaps(lista) {
-        if (!map || typeof google === 'undefined') return;
-        limparMarcadores();
+    function adicionarMarcadoresLeaflet(lista) {
+        if (!map) inicializarMapa();
+        if (!markersGroup) return;
+
+        markersGroup.clearLayers();
+
+        if (!Array.isArray(lista)) return;
 
         lista.forEach(p => {
             const lat = parseFloat(p.lat) || (-12.7761 + (Math.random() - 0.5) * 0.04);
             const lng = parseFloat(p.lng) || (15.7392 + (Math.random() - 0.5) * 0.04);
 
-            const marker = new google.maps.Marker({
-                position: { lat, lng },
-                map: map,
-                title: p.nome
-            });
-
-            const infoWindow = new google.maps.InfoWindow({
-                content: `
-                    <div style="color: #000; padding: 5px;">
-                        <strong>${p.nome}</strong><br>
-                        <span>${p.categoria}</span><br>
-                        <small>${p.municipio}</small>
-                    </div>
-                `
-            });
-
-            marker.addListener('click', () => {
-                infoWindow.open(map, marker);
-            });
-
-            googleMarkers.push(marker);
+            const marker = L.marker([lat, lng]);
+            marker.bindPopup(`
+                <div style="color: #000; padding: 2px;">
+                    <strong>${p.nome}</strong><br>
+                    <span>${p.categoria}</span><br>
+                    <small>${p.municipio}</small>
+                </div>
+            `);
+            markersGroup.addLayer(marker);
         });
     }
 
@@ -108,8 +91,10 @@ document.addEventListener('DOMContentLoaded', () => {
             btnViewCards.classList.remove('active');
             containerCards.style.display = 'none';
             containerMap.classList.remove('map-hidden');
-            if (map && typeof google !== 'undefined') {
-                google.maps.event.trigger(map, 'resize');
+            
+            inicializarMapa();
+            if (map) {
+                setTimeout(() => map.invalidateSize(), 200);
             }
         });
     }
@@ -156,7 +141,6 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetch(url);
             const prestadores = await res.json();
-            prestadoresAtuais = prestadores;
             renderizarPrestadores(prestadores);
         } catch (err) {
             console.error("Erro ao carregar prestadores:", err);
@@ -168,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!Array.isArray(lista) || lista.length === 0) {
             containerCards.innerHTML = '<p style="grid-column: 1/-1; text-align: center; opacity: 0.7;">Nenhum prestador encontrado.</p>';
-            limparMarcadores();
+            if (markersGroup) markersGroup.clearLayers();
             return;
         }
 
@@ -189,10 +173,13 @@ document.addEventListener('DOMContentLoaded', () => {
             containerCards.appendChild(card);
         });
 
-        adicionarMarcadoresGoogleMaps(lista);
+        adicionarMarcadoresLeaflet(lista);
     }
 
     if (btnBusca) btnBusca.addEventListener('click', buscarPrestadores);
+    
+    // Inicialização ao carregar
+    inicializarMapa();
     buscarPrestadores();
 
     // ------------------------------------------------------------------
