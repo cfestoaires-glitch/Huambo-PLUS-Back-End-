@@ -2,15 +2,11 @@ const express = require('express');
 const path = require('path');
 const app = express();
 
-// Serve os ficheiros estáticos da pasta 'public'
+const PORT = process.env.PORT || 3000;
+
+// Obriga o servidor a servir os ficheiros da pasta public (index.html, app.js, etc.)
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Redireciona qualquer rota para o index.html
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Servidor a correr na porta ${PORT}`);
 });
