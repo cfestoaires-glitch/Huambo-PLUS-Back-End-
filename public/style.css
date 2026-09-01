@@ -20,7 +20,7 @@ body {
     background-color: var(--bg-color);
     color: var(--text-color);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    padding-bottom: 70px; /* Espaço para a barra de navegação inferior */
+    padding-bottom: 70px;
 }
 
 /* ==========================================
@@ -189,6 +189,25 @@ body {
 }
 
 /* ==========================================
+   ETIQUETA DE PERFIL PILOTO / EXEMPLO
+   ========================================== */
+.badge-piloto {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    border: 1px solid #fbbf24;
+}
+
+/* ==========================================
    ALTERNADOR DE VISTA (LISTA / MAPA)
    ========================================== */
 .view-toggle {
@@ -236,7 +255,7 @@ body {
 }
 
 /* ==========================================
-   FORMULÁRIOS E CAIXAS
+   FORMULÁRIOS E CARTÕES
    ========================================== */
 .form-box {
     background: var(--card-bg);
@@ -245,12 +264,12 @@ body {
     border-radius: 12px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
 }
 
 .form-box h2, .form-box h3 {
     font-size: 1.1rem;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
 }
 
 .form-box label {
