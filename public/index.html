@@ -1,43 +1,110 @@
-document.addEventListener('DOMContentLoaded', () => {
-    // Alternância de Abas
-    const navButtons = document.querySelectorAll('.nav-btn');
-    const tabContents = document.querySelectorAll('.tab-content');
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Huambo Plus - Plataforma de Serviços</title>
+    
+    <!-- CSS Principal -->
+    <link rel="stylesheet" href="/style.css">
+    
+    <!-- FontAwesome para Ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
 
-    navButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const targetTab = button.getAttribute('data-tab');
+    <!-- Navegação -->
+    <nav class="navbar">
+        <div class="logo">Huambo<span>Plus</span></div>
+        <div class="nav-links">
+            <button class="nav-btn active" data-tab="busca">Buscar</button>
+            <button class="nav-btn" data-tab="gritos">Mural de Gritos</button>
+            <button class="nav-btn" data-tab="registo">Registo Prestador</button>
+        </div>
+        <div class="nav-actions">
+            <button id="btn-login-modal" class="btn-primary">Entrar</button>
+        </div>
+    </nav>
 
-            navButtons.forEach(btn => btn.classList.remove('active'));
-            tabContents.forEach(tab => tab.classList.remove('active'));
+    <main class="container">
+        <!-- ABA 1: BUSCA -->
+        <section id="aba-busca" class="tab-content active">
+            <div class="search-bar">
+                <input type="text" id="campo-busca" placeholder="Ex: Canalizador, Eletricista...">
+                <select id="filtro-municipio">
+                    <option value="">Todos os Municípios</option>
+                    <option value="Huambo">Huambo</option>
+                    <option value="Caála">Caála</option>
+                    <option value="Bailundo">Bailundo</option>
+                </select>
+                <select id="filtro-categoria">
+                    <option value="">Todas as Categorias</option>
+                    <option value="Construção & Reparos - Canalizador">Canalizador</option>
+                    <option value="Construção & Reparos - Eletricista">Eletricista</option>
+                </select>
+                <button id="btn-executar-busca" class="btn-primary">Pesquisar</button>
+            </div>
 
-            button.classList.add('active');
-            const activeSection = document.getElementById(`aba-${targetTab}`);
-            if (activeSection) {
-                activeSection.classList.add('active');
-            }
-        });
-    });
+            <!-- Lista de Prestadores -->
+            <div id="container-cards" class="cards-grid"></div>
+        </section>
 
-    // Controle do Modal de Login
-    const modalLogin = document.getElementById('modal-login');
-    const btnAbrirModal = document.getElementById('btn-login-modal');
-    const btnFecharModal = document.getElementById('btn-fechar-modal');
+        <!-- ABA 2: MURAL DE GRITOS -->
+        <section id="aba-gritos" class="tab-content">
+            <h2>Mural de Pedidos Rápidos (Gritos)</h2>
+            <div id="container-gritos"></div>
+        </section>
 
-    if (btnAbrirModal && modalLogin) {
-        btnAbrirModal.addEventListener('click', () => {
-            modalLogin.style.display = 'flex';
-        });
-    }
+        <!-- ABA 3: REGISTO DE PRESTADOR -->
+        <section id="aba-registo" class="tab-content">
+            <h2>Candidatura de Prestador de Serviços</h2>
+            <form id="form-prestador" class="form-box">
+                <label>Nome Completo</label>
+                <input type="text" id="reg-nome" required>
 
-    if (btnFecharModal && modalLogin) {
-        btnFecharModal.addEventListener('click', () => {
-            modalLogin.style.display = 'none';
-        });
-    }
+                <label>NIF</label>
+                <input type="text" id="reg-nif">
 
-    window.addEventListener('click', (event) => {
-        if (event.target === modalLogin) {
-            modalLogin.style.display = 'none';
-        }
-    });
-});
+                <label>Categoria / Profissão</label>
+                <select id="reg-categoria" required>
+                    <option value="Construção & Reparos - Canalizador">Canalizador</option>
+                    <option value="Construção & Reparos - Eletricista">Eletricista</option>
+                </select>
+
+                <label>Município</label>
+                <select id="reg-municipio" required>
+                    <option value="Huambo">Huambo</option>
+                    <option value="Caála">Caála</option>
+                    <option value="Bailundo">Bailundo</option>
+                </select>
+
+                <label>Telefone / WhatsApp</label>
+                <input type="text" id="reg-telefone" required>
+
+                <label>Taxa de Deslocação (Kz)</label>
+                <input type="number" id="reg-taxa" value="0">
+
+                <button type="submit" class="btn-primary">Submeter Candidatura</button>
+            </form>
+        </section>
+    </main>
+
+    <!-- MODAL DE LOGIN -->
+    <div id="modal-login" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-modal" id="btn-fechar-modal">&times;</span>
+            <h2>Acessar Conta</h2>
+            <form id="form-login">
+                <label>Email</label>
+                <input type="email" id="login-email" required>
+                <label>Senha</label>
+                <input type="password" id="login-senha" required>
+                <button type="submit" class="btn-primary">Entrar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- O JavaScript é carregado AQUI por este ficheiro externo -->
+    <script src="/app.js"></script>
+</body>
+</html>
