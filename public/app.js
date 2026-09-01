@@ -1,45 +1,35 @@
-// Dados Piloto com Portfólio, Avaliações e Chat Interno
-const dadosPiloto = [
-    {
-        id: "piloto-1",
-        nome: "António Canalizador (Exemplo)",
-        categoria: "Canalizador",
-        municipio: "Huambo",
-        telefone: "+244 923 000 001",
-        taxa: 2000,
-        isPiloto: true,
-        portfolio: [
-            "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=300",
-            "https://images.unsplash.com/photo-1542013936697-07464cf03bb9?w=300"
-        ],
-        avaliacoes: [
-            { nota: 5, comentario: "Excelente profissional, resolveu a fuga de água muito rápido!" },
-            { nota: 4, comentario: "Bom atendimento e pontualidade." }
-        ],
-        mensagens: [
-            { remetente: "recebida", texto: "Olá! Como posso ajudar com a sua canalização hoje?" }
-        ]
-    },
-    {
-        id: "piloto-2",
-        nome: "Joaquim Eletricista (Exemplo)",
-        categoria: "Eletricista",
-        municipio: "Caála",
-        telefone: "+244 912 000 002",
-        taxa: 2500,
-        isPiloto: true,
-        portfolio: [
-            "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=300"
-        ],
-        avaliacoes: [
-            { nota: 5, comentario: "Instalou o quadro elétrico perfeitamente." }
-        ],
-        mensagens: [
-            { remetente: "recebida", texto: "Boa tarde, faço instalações e reparações elétricas. Em que zona está?" }
-        ]
-    }
-];
+// 1. Configuração do Supabase
+const supabaseUrl = 'https://vpukkvxnlwyhoqpgckzh.supabase.co';
+const supabaseKey = 'sb_publishable_XawUI3JjNpCjETe4tEAXwQ_QkgkVlul';
+const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
+// Variável global para guardar os prestadores que vêm da nuvem
+let prestadoresCloud = [];
+
+// 2. Função para ir buscar os dados reais à Base de Dados
+async function carregarPrestadoresDaNuvem() {
+    const container = document.getElementById("container-cards");
+    if (!container) return;
+    
+    container.innerHTML = '<p style="text-align: center; padding: 20px; color: var(--text-muted);">A carregar prestadores da nuvem...</p>';
+
+    try {
+        const { data: prestadores, error } = await supabase
+            .from('prestadores')
+            .select('*')
+            .order('criado_em', { ascending: false });
+
+        if (error) throw error;
+
+        prestadoresCloud = prestadores || [];
+        renderizarPrestadores(prestadoresCloud);
+    } catch (error) {
+        console.error("Erro ao carregar dados:", error.message);
+        container.innerHTML = '<p style="color: red; text-align: center;">Erro ao ligar à base de dados. Verifica a ligação.</p>';
+    }
+}
+
+// 3. Garantir que o Modal de Perfil e Chat existe no DOM
 function garantirModalPerfil() {
     if (document.getElementById("modal-perfil-detalhe")) return;
 
@@ -58,12 +48,14 @@ function garantirModalPerfil() {
     });
 }
 
+// 4. Abrir Perfil com Portfólio e Chat Interno
 function abrirPerfilPrestador(p) {
     garantirModalPerfil();
     const containerModal = document.getElementById("conteudo-perfil-modal");
     
-    const badgeHtml = p.isPiloto ? `<span class="badge-piloto"><i class="fa-solid fa-star"></i> Perfil Piloto / Exemplo</span><br>` : '';
+    const badgeHtml = p.is_piloto ? `<span class="badge-piloto"><i class="fa-solid fa-star"></i> Perfil Piloto / Exemplo</span><br>` : '';
     
+    // Portfólio
     let portfolioHtml = '<p style="color: var(--text-muted); font-size: 0.8rem;">Sem fotos de portfólio registadas.</p>';
     if (p.portfolio && p.portfolio.length > 0) {
         portfolioHtml = `<div class="portfolio-grid">
@@ -71,14 +63,11 @@ function abrirPerfilPrestador(p) {
         </div>`;
     }
 
-    let avaliacoesHtml = '<p style="color: var(--text-muted); font-size: 0.8rem;">Ainda sem avaliações.</p>';
-    if (p.avaliacoes && p.avaliacoes.length > 0) {
-        avaliacoesHtml = p.avaliacoes.map(a => `
-            <div style="background: var(--bg-color); padding: 6px 8px; border-radius: 4px; margin-bottom: 4px; border: 1px solid var(--border-color);">
-                <div style="color: #f59e0b; font-size: 0.75rem;">${'⭐'.repeat(a.nota)}</div>
-                <p style="font-size: 0.75rem; color: var(--text-color);">"${a.comentario}"</p>
-            </div>
-        `).join('');
+    // Estrutura padrão de chat local temporária para demonstração do perfil selecionado
+    if (!p.mensagens) {
+        p.mensagens = [
+            { remetente: "recebida", texto: `Olá! Sou o/a ${p.nome}. Como posso ajudar com os meus serviços em ${p.municipio}?` }
+        ];
     }
 
     containerModal.innerHTML = `
@@ -86,7 +75,8 @@ function abrirPerfilPrestador(p) {
         <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 2px;">${p.nome}</h2>
         <p style="font-size: 0.8rem; color: var(--primary-color); margin-bottom: 8px;"><strong>${p.categoria}</strong> • ${p.municipio}</p>
         
-        <p style="font-size: 0.8rem; margin-bottom: 4px;">💰 <strong>Taxa de Deslocação:</strong> ${p.taxa || 0} Kz</p>
+        <p style="font-size: 0.8rem; margin-bottom: 2px;">📞 <strong>Contacto:</strong> ${p.telefone || 'Não especificado'}</p>
+        <p style="font-size: 0.8rem; margin-bottom: 8px;">💰 <strong>Taxa de Deslocação:</strong> ${p.taxa || 0} Kz</p>
         
         <h3 style="font-size: 0.85rem; font-weight: 600; margin-top: 8px;">Portfólio de Trabalhos</h3>
         ${portfolioHtml}
@@ -99,17 +89,13 @@ function abrirPerfilPrestador(p) {
                 <button onclick="enviarMensagemInterna('${p.id}')">Enviar</button>
             </div>
         </div>
-
-        <h3 style="font-size: 0.85rem; font-weight: 600; margin-top: 8px;">Avaliações (${p.avaliacoes ? p.avaliacoes.length : 0})</h3>
-        <div style="max-height: 100px; overflow-y: auto; margin-top: 4px;">
-            ${avaliacoesHtml}
-        </div>
     `;
 
     document.getElementById("modal-perfil-detalhe").style.display = "flex";
     atualizarEcraChat(p);
 }
 
+// 5. Atualizar o Ecrã de Chat
 function atualizarEcraChat(p) {
     const listaMsg = document.getElementById(`chat-mensagens-${p.id}`);
     if (!listaMsg) return;
@@ -120,25 +106,30 @@ function atualizarEcraChat(p) {
     listaMsg.scrollTop = listaMsg.scrollHeight;
 }
 
+// 6. Enviar Mensagem no Chat Interno
 window.enviarMensagemInterna = function(idPrestador) {
     const input = document.getElementById(`input-texto-chat-${idPrestador}`);
     if (!input || !input.value.trim()) return;
 
     const textoUser = input.value.trim();
-    const prestador = dadosPiloto.find(x => x.id === idPrestador);
+    const prestador = prestadoresCloud.find(x => x.id === idPrestador);
 
     if (prestador) {
+        if (!prestador.mensagens) prestador.mensagens = [];
+        
         prestador.mensagens.push({ remetente: "enviada", texto: textoUser });
         input.value = "";
         atualizarEcraChat(prestador);
 
+        // Resposta simulada automática do prestador
         setTimeout(() => {
-            prestador.mensagens.push({ remetente: "recebida", texto: "Mensagem recebida com sucesso na plataforma Huambo Plus!" });
+            prestador.mensagens.push({ remetente: "recebida", texto: "Mensagem registada com sucesso na plataforma Huambo Plus!" });
             atualizarEcraChat(prestador);
         }, 1000);
     }
 };
 
+// 7. Renderizar a Grelha de Cartões
 function renderizarPrestadores(lista) {
     const container = document.getElementById("container-cards");
     if (!container) return;
@@ -151,14 +142,8 @@ function renderizarPrestadores(lista) {
     }
 
     lista.forEach(p => {
-        const badgeHtml = p.isPiloto ? `<span class="badge-piloto"><i class="fa-solid fa-star"></i> Perfil Piloto / Exemplo</span>` : '';
+        const badgeHtml = p.is_piloto ? `<span class="badge-piloto"><i class="fa-solid fa-star"></i> Perfil Piloto / Exemplo</span>` : '';
         
-        let mediaAvaliacao = '';
-        if (p.avaliacoes && p.avaliacoes.length > 0) {
-            const media = (p.avaliacoes.reduce((acc, curr) => acc + curr.nota, 0) / p.avaliacoes.length).toFixed(1);
-            mediaAvaliacao = `<span style="font-size: 0.8rem; color: #f59e0b;">⭐ ${media}</span>`;
-        }
-
         const card = document.createElement("div");
         card.className = "form-box";
         card.style.cursor = "pointer";
@@ -166,10 +151,7 @@ function renderizarPrestadores(lista) {
             ${badgeHtml}
             <h3 style="font-size: 1rem; font-weight: 700;">${p.nome}</h3>
             <p style="font-size: 0.85rem; color: var(--primary-color);"><strong>${p.categoria}</strong> • ${p.municipio}</p>
-            <p style="font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
-                <span>💰 Taxa: ${p.taxa || 0} Kz</span>
-                ${mediaAvaliacao}
-            </p>
+            <p style="font-size: 0.85rem; margin-top: 4px;">💰 Taxa: ${p.taxa || 0} Kz</p>
         `;
 
         card.addEventListener("click", () => abrirPerfilPrestador(p));
@@ -177,8 +159,9 @@ function renderizarPrestadores(lista) {
     });
 }
 
+// 8. Inicialização Geral ao Carregar a Página
 document.addEventListener("DOMContentLoaded", () => {
-    renderizarPrestadores(dadosPiloto);
+    carregarPrestadoresDaNuvem();
 
     const btnPesquisar = document.getElementById("btn-executar-busca");
     const campoBusca = document.getElementById("campo-busca");
@@ -189,9 +172,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const termo = campoBusca.value.toLowerCase().trim();
             const municipioSelecionado = filtroMunicipio.value;
 
-            const resultados = dadosPiloto.filter(p => {
-                const matchTexto = p.nome.toLowerCase().includes(termo) || 
-                                   p.categoria.toLowerCase().includes(termo);
+            const resultados = prestadoresCloud.filter(p => {
+                const matchTexto = (p.nome && p.nome.toLowerCase().includes(termo)) || 
+                                   (p.categoria && p.categoria.toLowerCase().includes(termo));
                 const matchMunicipio = municipioSelecionado === "" || p.municipio === municipioSelecionado;
                 return matchTexto && matchMunicipio;
             });
@@ -211,7 +194,8 @@ document.addEventListener("DOMContentLoaded", () => {
             document.querySelectorAll(".tab-content").forEach(tab => {
                 tab.classList.remove("active");
             });
-            document.getElementById(`aba-${tabId}`).classList.add("active");
+            const abaAlvo = document.getElementById(`aba-${tabId}`);
+            if (abaAlvo) abaAlvo.classList.add("active");
         });
     });
 });
