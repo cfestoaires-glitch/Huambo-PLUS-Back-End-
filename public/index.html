@@ -11,8 +11,9 @@
     <!-- FontAwesome para Ícones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Google Maps API JavaScript (Substitua SUA_CHAVE_API_AQUI pela sua chave da Google Cloud) -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=SUA_CHAVE_API_AQUI&callback=initMap" async defer></script>
+    <!-- Leaflet CSS & JS (100% Gratuito / OpenStreetMap) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
 
@@ -68,9 +69,9 @@
             <!-- Grelha de Prestadores -->
             <div id="container-cards" class="cards-grid"></div>
 
-            <!-- Contentor do Mapa (Google Maps) -->
+            <!-- Contentor do Mapa (Leaflet) -->
             <div id="map-container" class="map-hidden">
-                <div id="map" style="width: 100%; height: 100%;"></div>
+                <div id="map" style="width: 100%; height: 100%; min-height: 400px;"></div>
             </div>
         </section>
 
