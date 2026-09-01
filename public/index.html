@@ -1,58 +1,106 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="pt" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Huambo Plus - Plataforma de Serviços</title>
     
-    <!-- CSS Principal -->
+    <!-- Estilos Principais -->
     <link rel="stylesheet" href="/style.css">
     
     <!-- FontAwesome para Ícones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Leaflet.js para Mapa Interativo -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
 
-    <!-- Navegação -->
+    <!-- Navegação Superior -->
     <nav class="navbar">
         <div class="logo">Huambo<span>Plus</span></div>
         <div class="nav-links">
-            <button class="nav-btn active" data-tab="busca">Buscar</button>
-            <button class="nav-btn" data-tab="gritos">Mural de Gritos</button>
-            <button class="nav-btn" data-tab="registo">Registo Prestador</button>
+            <button class="nav-btn active" data-tab="busca"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+            <button class="nav-btn" data-tab="gritos"><i class="fa-solid fa-bullhorn"></i> Mural de Gritos</button>
+            <button class="nav-btn" data-tab="registo"><i class="fa-solid fa-user-plus"></i> Registo Prestador</button>
         </div>
         <div class="nav-actions">
-            <button id="btn-login-modal" class="btn-primary">Entrar</button>
+            <select id="seletor-idioma">
+                <option value="PT">PT</option>
+                <option value="EN">EN</option>
+                <option value="UMB">UMB</option>
+            </select>
+            <button id="btn-tema" title="Alternar Tema"><i class="fa-solid fa-moon"></i></button>
+            <div id="area-auth">
+                <button id="btn-login-modal" class="btn-primary">Entrar</button>
+            </div>
         </div>
     </nav>
 
     <main class="container">
-        <!-- ABA 1: BUSCA -->
+        <!-- ABA 1: BUSCA E MAPA -->
         <section id="aba-busca" class="tab-content active">
             <div class="search-bar">
-                <input type="text" id="campo-busca" placeholder="Ex: Canalizador, Eletricista...">
+                <input type="text" id="campo-busca" placeholder="Ex: Canalizador, Eletricista, Professor...">
                 <select id="filtro-municipio">
                     <option value="">Todos os Municípios</option>
                     <option value="Huambo">Huambo</option>
                     <option value="Caála">Caála</option>
                     <option value="Bailundo">Bailundo</option>
+                    <option value="Ekunha">Ekunha</option>
+                    <option value="Ukuma">Ukuma</option>
                 </select>
                 <select id="filtro-categoria">
                     <option value="">Todas as Categorias</option>
                     <option value="Construção & Reparos - Canalizador">Canalizador</option>
                     <option value="Construção & Reparos - Eletricista">Eletricista</option>
+                    <option value="Educação - Explicações">Professor / Explicador</option>
+                    <option value="Tecnologia - Informática">Técnico de Informática</option>
                 </select>
-                <button id="btn-executar-busca" class="btn-primary">Pesquisar</button>
+                <button id="btn-executar-busca" class="btn-primary"><i class="fa-solid fa-search"></i> Pesquisar</button>
             </div>
 
-            <!-- Lista de Prestadores -->
+            <div class="view-toggle">
+                <button id="btn-view-cards" class="active"><i class="fa-solid fa-list"></i> Lista</button>
+                <button id="btn-view-map"><i class="fa-solid fa-map-location-dot"></i> Mapa</button>
+            </div>
+
+            <!-- Grelha de Prestadores -->
             <div id="container-cards" class="cards-grid"></div>
+
+            <!-- Contentor do Mapa -->
+            <div id="map-container" class="map-hidden">
+                <div id="map"></div>
+            </div>
         </section>
 
         <!-- ABA 2: MURAL DE GRITOS -->
         <section id="aba-gritos" class="tab-content">
-            <h2>Mural de Pedidos Rápidos (Gritos)</h2>
-            <div id="container-gritos"></div>
+            <div class="gritos-header">
+                <h2>Mural de Pedidos Rápidos (Gritos)</h2>
+                <button id="btn-novo-grito" class="btn-primary"><i class="fa-solid fa-plus"></i> Publicar Grito</button>
+            </div>
+            
+            <!-- Formulário Dinâmico de Novo Grito -->
+            <form id="form-novo-grito" class="form-box" style="display: none; margin-bottom: 25px;">
+                <h3>Novo Pedido de Serviço</h3>
+                <label>Título do Pedido</label>
+                <input type="text" id="grito-titulo" placeholder="Ex: Preciso urgente de um canalizador na Cidade Alta" required>
+                <label>Município</label>
+                <select id="grito-municipio" required>
+                    <option value="Huambo">Huambo</option>
+                    <option value="Caála">Caála</option>
+                    <option value="Bailundo">Bailundo</option>
+                </select>
+                <label>Descrição Detalhada</label>
+                <textarea id="grito-descricao" rows="3" placeholder="Descreva o problema..." required></textarea>
+                <label>Telefone / WhatsApp para Contacto</label>
+                <input type="text" id="grito-telefone" placeholder="+244 ..." required>
+                <button type="submit" class="btn-primary">Publicar no Mural</button>
+            </form>
+
+            <div id="container-gritos" class="gritos-list"></div>
         </section>
 
         <!-- ABA 3: REGISTO DE PRESTADOR -->
@@ -63,12 +111,14 @@
                 <input type="text" id="reg-nome" required>
 
                 <label>NIF</label>
-                <input type="text" id="reg-nif">
+                <input type="text" id="reg-nif" placeholder="Opcional">
 
                 <label>Categoria / Profissão</label>
                 <select id="reg-categoria" required>
                     <option value="Construção & Reparos - Canalizador">Canalizador</option>
                     <option value="Construção & Reparos - Eletricista">Eletricista</option>
+                    <option value="Educação - Explicações">Professor / Explicador</option>
+                    <option value="Tecnologia - Informática">Técnico de Informática</option>
                 </select>
 
                 <label>Município</label>
@@ -79,7 +129,7 @@
                 </select>
 
                 <label>Telefone / WhatsApp</label>
-                <input type="text" id="reg-telefone" required>
+                <input type="text" id="reg-telefone" placeholder="+244 ..." required>
 
                 <label>Taxa de Deslocação (Kz)</label>
                 <input type="number" id="reg-taxa" value="0">
@@ -89,22 +139,30 @@
         </section>
     </main>
 
-    <!-- MODAL DE LOGIN -->
-    <div id="modal-login" class="modal" style="display: none;">
+    <!-- MODAL DE LOGIN (COMUM E ADMINISTRADOR) -->
+    <div id="modal-login" class="modal">
         <div class="modal-content">
             <span class="close-modal" id="btn-fechar-modal">&times;</span>
             <h2>Acessar Conta</h2>
             <form id="form-login">
+                <label>Tipo de Conta</label>
+                <select id="login-tipo" required>
+                    <option value="usuario">Utilizador Comum</option>
+                    <option value="admin">Administrador</option>
+                </select>
+
                 <label>Email</label>
                 <input type="email" id="login-email" required>
+
                 <label>Senha</label>
                 <input type="password" id="login-senha" required>
-                <button type="submit" class="btn-primary">Entrar</button>
+
+                <button type="submit" class="btn-primary" style="width: 100%; margin-top: 15px;">Entrar</button>
             </form>
         </div>
     </div>
 
-    <!-- O JavaScript é carregado AQUI por este ficheiro externo -->
+    <!-- Script Principal -->
     <script src="/app.js"></script>
 </body>
 </html>
