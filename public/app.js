@@ -72,16 +72,12 @@ async function abrirPerfilPrestador(p) {
             </div>
             <div class="chat-input-row">
                 <input type="text" id="input-texto-chat-${p.id}" placeholder="Escreva uma mensagem...">
-                <button id="btn-enviar-chat-${p.id}">Enviar</button>
+                <button onclick="enviarMensagemInterna('${p.id}')">Enviar</button>
             </div>
         </div>
     `;
 
     document.getElementById("modal-perfil-detalhe").style.display = "flex";
-    
-    // Ouvinte seguro para o chat
-    document.getElementById(`btn-enviar-chat-${p.id}`).addEventListener("click", () => enviarMensagemInterna(p.id));
-    
     await carregarMensagensDaNuvem(p.id);
 }
 
@@ -99,7 +95,7 @@ async function carregarMensagensDaNuvem(idPrestador) {
         if (error) throw error;
 
         if (!mensagens || mensagens.length === 0) {
-            await supabase.from('mensagens_chat').insert([
+            await supabase.from('mensagens_chat'].insert([
                 { prestador_id: idPrestador, remetente: 'recebida', texto: 'Olá! Como posso ajudar?' }
             ]);
             return carregarMensagensDaNuvem(idPrestador);
@@ -112,7 +108,7 @@ async function carregarMensagensDaNuvem(idPrestador) {
     }
 }
 
-async function enviarMensagemInterna(idPrestador) {
+window.enviarMensagemInterna = async function(idPrestador) {
     const input = document.getElementById(`input-texto-chat-${idPrestador}`);
     if (!input || !input.value.trim()) return;
 
@@ -125,28 +121,29 @@ async function enviarMensagemInterna(idPrestador) {
     } catch (error) {
         console.error("Erro ao enviar:", error.message);
     }
-}
+};
 
 // ==========================================
-// 4. GESTÃO DE ABAS E ESCOLHA DE PERFIL (COM EVENT LISTENERS SEGUROS)
+// 4. GESTÃO DE ABAS E ESCOLHA DE PERFIL
 // ==========================================
 function configurarEcraRegistoEEntrada() {
     const abaRegistar = document.getElementById("aba-registar");
     if (!abaRegistar) return;
 
+    // Menu inicial de escolha de perfil para garantir que todos os botões funcionam perfeitamente
     abaRegistar.innerHTML = `
         <div style="max-width: 450px; margin: 15px auto; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
             <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; color: #0f172a; text-align: center;">Bem-vindo ao Huambo Plus</h2>
             <p style="font-size: 0.78rem; color: #64748b; margin-bottom: 16px; text-align: center;">Selecione o tipo de conta que deseja aceder ou criar:</p>
             
             <div style="display: flex; flex-direction: column; gap: 10px;">
-                <button id="btn-menu-cliente" style="padding: 12px; background: #2563eb; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer;">
+                <button onclick="mostrarRegistoCliente()" style="padding: 12px; background: #2563eb; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer;">
                     👤 Entrar / Registar como Cliente
                 </button>
-                <button id="btn-menu-prestador" style="padding: 12px; background: #0f172a; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer;">
+                <button onclick="mostrarRegistoPrestador()" style="padding: 12px; background: #0f172a; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer;">
                     🛠️ Registar como Prestador (com Selfie e BI)
                 </button>
-                <button id="btn-menu-admin" style="padding: 12px; background: #475569; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer;">
+                <button onclick="abrirPainelAdmin()" style="padding: 12px; background: #475569; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer;">
                     ⚙️ Painel de Administração
                 </button>
             </div>
@@ -154,34 +151,21 @@ function configurarEcraRegistoEEntrada() {
             <div id="sub-conteudo-registo" style="margin-top: 15px;"></div>
         </div>
     `;
-
-    // Atribuir ouvintes de cliques de forma totalmente segura
-    document.getElementById("btn-menu-cliente").addEventListener("click", mostrarRegistoCliente);
-    document.getElementById("btn-menu-prestador").addEventListener("click", mostrarRegistoPrestador);
-    document.getElementById("btn-menu-admin").addEventListener("click", abrirPainelAdmin);
 }
 
-function mostrarRegistoCliente() {
+window.mostrarRegistoCliente = function() {
     const sub = document.getElementById("sub-conteudo-registo");
-    if (!sub) return;
-    
     sub.innerHTML = `
         <div style="border-top: 1px solid #e2e8f0; padding-top: 12px; margin-top: 12px;">
             <h3 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 8px;">Área de Cliente</h3>
             <p style="font-size: 0.75rem; color: #64748b; margin-bottom: 10px;">Como cliente, pode pesquisar serviços e contactar prestadores livremente.</p>
-            <button id="btn-continuar-cliente" style="width: 100%; padding: 8px; background: #16a34a; color: white; border: none; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 600;">Continuar como Cliente</button>
+            <button onclick="alert('Sessão de cliente ativa! Pode navegar pelos serviços na aba Buscar.')" style="width: 100%; padding: 8px; background: #16a34a; color: white; border: none; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 600;">Continuar como Cliente</button>
         </div>
     `;
+};
 
-    document.getElementById("btn-continuar-cliente").addEventListener("click", () => {
-        alert("Sessão de cliente ativa! Pode navegar pelos serviços na aba Buscar.");
-    });
-}
-
-function mostrarRegistoPrestador() {
+window.mostrarRegistoPrestador = function() {
     const sub = document.getElementById("sub-conteudo-registo");
-    if (!sub) return;
-
     sub.innerHTML = `
         <div style="border-top: 1px solid #e2e8f0; padding-top: 12px; margin-top: 12px;">
             <h3 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 8px;">Registo de Prestador</h3>
@@ -211,7 +195,7 @@ function mostrarRegistoPrestador() {
         e.preventDefault();
         const btn = document.getElementById("btn-submeter");
         btn.disabled = true;
-        btn.innerText = "A enviar dados e ficheiros...";
+        btn.innerText = "A enviar dados...";
 
         try {
             const nome = document.getElementById("reg-nome").value;
@@ -238,7 +222,7 @@ function mostrarRegistoPrestador() {
             }]);
 
             if (error) throw error;
-            alert("Registo submetido com sucesso! O seu perfil aguarda aprovação do administrador.");
+            alert("Registo submetido com sucesso! Aguarda aprovação do administrador.");
             configurarEcraRegistoEEntrada();
         } catch (err) {
             alert("Erro ao submeter: " + err.message);
@@ -247,12 +231,12 @@ function mostrarRegistoPrestador() {
             btn.innerText = "Submeter Registo";
         }
     });
-}
+};
 
 // ==========================================
 // 5. PAINEL DE ADMINISTRAÇÃO
 // ==========================================
-async function abrirPainelAdmin() {
+window.abrirPainelAdmin = async function() {
     garantirModalPerfil();
     const containerModal = document.getElementById("conteudo-perfil-modal");
 
@@ -290,36 +274,26 @@ async function abrirPainelAdmin() {
                 </div>
 
                 <div style="display: flex; gap: 6px;">
-                    <button class="btn-aprovar" data-id="${p.id}" style="flex:1; background:#16a34a; color:white; border:none; padding:6px; border-radius:4px; font-size:0.75rem; font-weight:600; cursor:pointer;">Aprovar</button>
-                    <button class="btn-rejeitar" data-id="${p.id}" style="flex:1; background:#dc2626; color:white; border:none; padding:6px; border-radius:4px; font-size:0.75rem; font-weight:600; cursor:pointer;">Rejeitar</button>
+                    <button onclick="alterarEstadoPrestador('${p.id}', 'aprovado')" style="flex:1; background:#16a34a; color:white; border:none; padding:6px; border-radius:4px; font-size:0.75rem; font-weight:600; cursor:pointer;">Aprovar</button>
+                    <button onclick="alterarEstadoPrestador('${p.id}', 'rejeitado')" style="flex:1; background:#dc2626; color:white; border:none; padding:6px; border-radius:4px; font-size:0.75rem; font-weight:600; cursor:pointer;">Rejeitar</button>
                 </div>
             </div>
         `).join('');
-
-        // Ouvintes seguros para os botões de aprovar/rejeitar gerados dinamicamente
-        document.querySelectorAll(".btn-aprovar").forEach(btn => {
-            btn.addEventListener("click", () => alterarEstadoPrestador(btn.getAttribute("data-id"), 'aprovado'));
-        });
-        document.querySelectorAll(".btn-rejeitar").forEach(btn => {
-            btn.addEventListener("click", () => alterarEstadoPrestador(btn.getAttribute("data-id"), 'rejeitado'));
-        });
-
     } catch (err) {
-        document.getElementById("lista-pendentes-admin").innerHTML = `<p style="color:red; text-align: center; font-size: 0.8rem;">Erro ao carregar painel.</p>`;
+        document.getElementById("lista-pendentes-admin").innerHTML = `<p style="color:red; text-align:center; font-size:0.8rem;">Erro ao carregar painel.</p>`;
     }
-}
+};
 
-async function alterarEstadoPrestador(id, estado) {
+window.alterarEstadoPrestador = async function(id, estado) {
     try {
-        const { error } = await supabase.from('prestadores').update({ status: estado }).eq('id', id);
-        if (error) throw error;
+        await supabase.from('prestadores').update({ status: estado }).eq('id', id);
         alert(`Prestador ${estado} com sucesso!`);
         abrirPainelAdmin();
         carregarPrestadoresDaNuvem();
     } catch (err) {
         alert("Erro ao alterar estado.");
     }
-}
+};
 
 // ==========================================
 // 6. RENDERIZAÇÃO PÚBLICA
@@ -349,7 +323,7 @@ function renderizarPrestadores(lista) {
 }
 
 // ==========================================
-// 7. INICIALIZAÇÃO DA APLICAÇÃO
+// 7. INICIALIZAÇÃO
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
     carregarPrestadoresDaNuvem();
