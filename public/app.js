@@ -19,24 +19,36 @@ let IDIOMA_ATUAL = 'pt';
 let DARK_MODE = localStorage.getItem('huambo_dark') === 'true';
 
 // ============================================================
-//  INICIALIZAR SUPABASE
+//  INICIALIZAR SUPABASE (CORRIGIDO)
 // ============================================================
 document.addEventListener('DOMContentLoaded', function() {
-    if (typeof supabaseClient !== 'undefined') {
-        supabase = supabaseClient.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // A biblioteca do Supabase carregada no HTML expõe 'window.supabase'
+    if (typeof window.supabase !== 'undefined') {
+        supabase = window.supabase.createClient(
+            SUPABASE_URL,
+            SUPABASE_ANON_KEY
+        );
         console.log('✅ Supabase inicializado');
         verificarSessao();
     } else {
-        console.error('❌ Supabase não carregado. Verifica a ligação à internet.');
-        setTimeout(() => mostrarTela('login'), 1800);
+        console.error('❌ Supabase não carregado. Forçando login...');
+        // Fallback: mesmo sem Supabase, mostra o login após 2 segundos
+        setTimeout(() => mostrarTela('login'), 2000);
     }
 });
 
 // ============================================================
-//  VERIFICAR SESSÃO
+//  VERIFICAR SESSÃO (com fallback)
 // ============================================================
 async function verificarSessao() {
     try {
+        // Verifica se o Supabase está disponível
+        if (!supabase) {
+            console.warn('⚠️ Supabase não disponível. Forçando login...');
+            setTimeout(() => mostrarTela('login'), 2000);
+            return;
+        }
+
         const { data } = await supabase.auth.getSession();
         if (data.session) {
             const { data: perfil } = await supabase
@@ -47,11 +59,13 @@ async function verificarSessao() {
             currentUser = perfil || { id: data.session.user.id, nome: data.session.user.email };
             iniciarApp();
         } else {
+            // Sem sessão: mostra login após 1.8s
             setTimeout(() => mostrarTela('login'), 1800);
         }
     } catch (e) {
         console.error('Erro ao verificar sessão:', e);
-        setTimeout(() => mostrarTela('login'), 1800);
+        // Em caso de erro, força a tela de login
+        setTimeout(() => mostrarTela('login'), 2000);
     }
 }
 
@@ -282,7 +296,6 @@ function mudarIdioma(lang) {
     document.querySelectorAll('.idioma-selector button').forEach(b =>
         b.classList.toggle('active', b.dataset.lang === lang)
     );
-    // Aqui podes adicionar lógica de tradução se quiseres
 }
 
 // ============================================================
@@ -503,13 +516,13 @@ function filtrarBusca() {
     container.querySelectorAll('.fav-btn').forEach(btn => {
         btn.onclick = (e) => {
             e.stopPropagation();
-            toggleFavorito(btn.parentElement.parentElement.dataset.id);
+            toggleFavorito(btn.closest('.card')?.dataset.id);
         };
     });
     container.querySelectorAll('.chat-btn').forEach(btn => {
         btn.onclick = (e) => {
             e.stopPropagation();
-            abrirChat(btn.parentElement.parentElement.dataset.id);
+            abrirChat(btn.closest('.card')?.dataset.id);
         };
     });
 }
@@ -518,6 +531,7 @@ function filtrarBusca() {
 //  FAVORITOS
 // ============================================================
 async function toggleFavorito(prestadorId) {
+    if (!prestadorId) return;
     if (!currentUser) {
         mostrarToast('Faça login.');
         return;
@@ -681,45 +695,6 @@ function fecharModalDetalhes() {
 }
 
 // ============================================================
-//  AFTER RENDER (bind de eventos)
-// ============================================================
-function afterRender() {
-    // Cards
-    document.querySelectorAll('.card').forEach(el => {
-        el.onclick = (e) => {
-            if (e.target.closest('.fav-btn') || e.target.closest('.chat-btn')) return;
-            const id = el.dataset.id;
-            abrirModalDetalhes(id);
-        };
-    });
-    // Favoritos
-    document.querySelectorAll('.fav-btn').forEach(btn => {
-        btn.onclick = (e) => {
-            e.stopPropagation();
-            const id = btn.closest('.card')?.dataset.id;
-            if (id) toggleFavorito(id);
-        };
-    });
-    // Chat
-    document.querySelectorAll('.chat-btn').forEach(btn => {
-        btn.onclick = (e) => {
-            e.stopPropagation();
-            const id = btn.closest('.card')?.dataset.id;
-            if (id) abrirChat(id);
-        };
-    });
-    // Avaliar
-    document.querySelectorAll('.avaliar-btn').forEach(btn => {
-        btn.onclick = (e) => {
-            e.stopPropagation();
-            const id = btn.dataset.id;
-            const p = PRESTADORES.find(x => x.id === id);
-            if (p) abrirModalAvaliar(p.id, p.nome);
-        };
-    });
-}
-
-// ============================================================
 //  MODAL DETALHES
 // ============================================================
 function abrirModalDetalhes(id) {
@@ -781,6 +756,45 @@ function simularOrcamento(id) {
 }
 
 // ============================================================
+//  AFTER RENDER (bind de eventos)
+// ============================================================
+function afterRender() {
+    // Cards
+    document.querySelectorAll('.card').forEach(el => {
+        el.onclick = (e) => {
+            if (e.target.closest('.fav-btn') || e.target.closest('.chat-btn')) return;
+            const id = el.dataset.id;
+            abrirModalDetalhes(id);
+        };
+    });
+    // Favoritos
+    document.querySelectorAll('.fav-btn').forEach(btn => {
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            const id = btn.closest('.card')?.dataset.id;
+            if (id) toggleFavorito(id);
+        };
+    });
+    // Chat
+    document.querySelectorAll('.chat-btn').forEach(btn => {
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            const id = btn.closest('.card')?.dataset.id;
+            if (id) abrirChat(id);
+        };
+    });
+    // Avaliar
+    document.querySelectorAll('.avaliar-btn').forEach(btn => {
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            const id = btn.dataset.id;
+            const p = PRESTADORES.find(x => x.id === id);
+            if (p) abrirModalAvaliar(p.id, p.nome);
+        };
+    });
+}
+
+// ============================================================
 //  INICIALIZAÇÃO DA APP
 // ============================================================
 async function iniciarApp() {
@@ -794,6 +808,17 @@ async function iniciarApp() {
     mudarTab('home');
     if (currentUser) conectarSocket();
 }
+
+// ============================================================
+//  FORÇAR LOGIN APÓS 3 SEGUNDOS (FALLBACK DE SEGURANÇA)
+// ============================================================
+setTimeout(() => {
+    const loginScreen = document.getElementById('login');
+    if (loginScreen && !loginScreen.classList.contains('active')) {
+        mostrarTela('login');
+        console.log('⏰ Fallback: forçando tela de login por timeout.');
+    }
+}, 3000);
 
 // ============================================================
 //  EXPOR FUNÇÕES GLOBAIS (para uso no HTML)
