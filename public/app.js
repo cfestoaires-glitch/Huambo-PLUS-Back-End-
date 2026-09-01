@@ -1,4 +1,9 @@
 // ==========================================
+// TESTE DE ARRANQUE
+// ==========================================
+alert("O app.js arrancou!");
+
+// ==========================================
 // 1. CONFIGURAÇÃO DO SUPABASE
 // ==========================================
 const supabaseUrl = 'https://vpukkvxnlwyhoqpgckzh.supabase.co';
@@ -176,7 +181,6 @@ function mostrarSecaoAdminLogin() {
 
     document.getElementById("btn-login-admin").addEventListener("click", () => {
         const pin = document.getElementById("admin-pin").value;
-        // Podes alterar a chave "admin123" para a que preferires
         if (pin === "admin123" || pin === "Huambo2026") {
             carregarPainelAdminCompleto();
         } else {
@@ -227,7 +231,6 @@ async function carregarPainelAdminCompleto() {
             </div>
         `).join('');
 
-        // Atribuir ações aos botões de aprovar/rejeitar
         document.querySelectorAll(".btn-aprovar").forEach(btn => {
             btn.addEventListener("click", () => alterarEstadoPrestador(btn.getAttribute("data-id"), 'aprovado'));
         });
