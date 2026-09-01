@@ -3,120 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Huambo Plus - Prestadores e Serviços</title>
-    <!-- FontAwesome para Ícones -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Folha de Estilos Principal -->
-    <link rel="stylesheet" href="style.css">
+    <title>Huambo Plus</title>
+    
+    <!-- Biblioteca oficial do Supabase (Obrigatória para o app.js funcionar) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Podes adicionar os teus estilos CSS aqui ou linkar o teu ficheiro style.css -->
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f8fafc;
+            margin: 0;
+            padding: 0;
+            color: #0f172a;
+        }
+        .tab-content {
+            display: none;
+            padding: 15px;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
 </head>
 <body>
 
-    <!-- Cabeçalho Principal -->
-    <header class="main-header">
-        <div class="logo-area">
-            <h1>Huambo<span>Plus</span></h1>
+    <!-- Conteúdo principal das abas da aplicação -->
+    <main>
+        <!-- Aba de Registo / Entrada / Escolha de Perfil -->
+        <div id="aba-registar" class="tab-content active"></div>
+
+        <!-- Aba de Pesquisa / Cards de Prestadores -->
+        <div id="aba-buscar" class="tab-content">
+            <div id="container-cards"></div>
         </div>
-        <div class="header-controls">
-            <select id="seletor-idioma" aria-label="Selecionar idioma">
-                <option value="pt">PT</option>
-            </select>
-            <button id="btn-tema" aria-label="Alternar tema escuro/claro"><i class="fa-solid fa-moon"></i></button>
-            <button class="btn-entrar">Entrar</button>
-        </div>
-    </header>
-
-    <!-- Conteúdo Principal Dinâmico por Abas -->
-    <main class="main-container">
-        
-        <!-- ABA 1: BUSCAR -->
-        <section id="aba-buscar" class="tab-content active">
-            <!-- Barra de Pesquisa -->
-            <div class="search-box-container">
-                <div class="search-input-wrapper">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" id="campo-busca" placeholder="O que procuras? (Ex: Advogado, Canalizador...)">
-                </div>
-                <div class="search-row-filters">
-                    <select id="filtro-municipio" aria-label="Filtrar por município">
-                        <option value="">Todos os Municípios</option>
-                        <option value="Huambo">Huambo</option>
-                        <option value="Caála">Caála</option>
-                        <option value="Bailundo">Bailundo</option>
-                    </select>
-                    <button id="btn-executar-busca" class="btn-primary">Pesquisar</button>
-                </div>
-            </div>
-
-            <!-- Categorias Populares -->
-            <div class="categories-section">
-                <h2>Categorias Populares</h2>
-                <div class="categories-grid">
-                    <div class="cat-card" data-cat="Canalizador">
-                        <i class="fa-solid fa-faucet-drip"></i>
-                        <span>Canalização</span>
-                    </div>
-                    <div class="cat-card" data-cat="Eletricista">
-                        <i class="fa-solid fa-bolt"></i>
-                        <span>Eletricista</span>
-                    </div>
-                    <div class="cat-card" data-cat="Explicações">
-                        <i class="fa-solid fa-graduation-cap"></i>
-                        <span>Explicações</span>
-                    </div>
-                    <div class="cat-card" data-cat="Informática">
-                        <i class="fa-solid fa-laptop-code"></i>
-                        <span>Informática</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Alternador de Vista (Lista / Mapa) -->
-            <div class="view-toggle">
-                <button class="toggle-btn active"><i class="fa-solid fa-list"></i> Lista</button>
-                <button class="toggle-btn"><i class="fa-solid fa-map-location-dot"></i> Mapa</button>
-            </div>
-
-            <!-- Contentor de Cartões / Resultados -->
-            <div id="container-cards" class="cards-grid">
-                <!-- Preenchido dinamicamente via app.js -->
-            </div>
-        </section>
-
-        <!-- ABA 2: GRITOS / MURAL -->
-        <section id="aba-gritos" class="tab-content">
-            <div class="form-box">
-                <h2>Mural de Gritos</h2>
-                <p style="color: var(--text-muted); font-size: 0.85rem;">Publica necessidades rápidas ou avisos para a comunidade do Huambo.</p>
-            </div>
-        </section>
-
-        <!-- ABA 3: REGISTAR -->
-        <section id="aba-registar" class="tab-content">
-            <div class="form-box">
-                <h2>Registar como Prestador</h2>
-                <p style="color: var(--text-muted); font-size: 0.85rem;">Junte-se à plataforma e exponha os seus serviços.</p>
-            </div>
-        </section>
-
     </main>
 
-    <!-- Navegação Inferior Fixa para Telemóvel -->
-    <nav class="bottom-nav">
-        <button class="nav-btn active" data-tab="buscar">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <span>Buscar</span>
-        </button>
-        <button class="nav-btn" data-tab="gritos">
-            <i class="fa-solid fa-bullhorn"></i>
-            <span>Gritos</span>
-        </button>
-        <button class="nav-btn" data-tab="registar">
-            <i class="fa-solid fa-user-plus"></i>
-            <span>Registar</span>
-        </button>
-    </nav>
-
-    <!-- Script Principal da Aplicação -->
+    <!-- O teu script principal da aplicação -->
     <script src="app.js"></script>
 </body>
 </html>
