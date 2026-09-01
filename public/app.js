@@ -1,4 +1,6 @@
-// 1. Configuração do Supabase
+// ==========================================
+// 1. CONFIGURAÇÃO DO SUPABASE
+// ==========================================
 const supabaseUrl = 'https://vpukkvxnlwyhoqpgckzh.supabase.co';
 const supabaseKey = 'sb_publishable_XawUI3JjNpCjETe4tEAXwQ_QkgkVlul';
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
@@ -6,7 +8,9 @@ const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 // Variável global para guardar os prestadores que vêm da nuvem
 let prestadoresCloud = [];
 
-// 2. Função para ir buscar os dados reais à Base de Dados
+// ==========================================
+// 2. CARREGAR PRESTADORES DA NUVEM
+// ==========================================
 async function carregarPrestadoresDaNuvem() {
     const container = document.getElementById("container-cards");
     if (!container) return;
@@ -29,7 +33,9 @@ async function carregarPrestadoresDaNuvem() {
     }
 }
 
-// 3. Garantir que o Modal de Perfil e Chat existe no DOM
+// ==========================================
+// 3. GERAR MODAL DE PERFIL E CHAT NA DOM
+// ==========================================
 function garantirModalPerfil() {
     if (document.getElementById("modal-perfil-detalhe")) return;
 
@@ -48,26 +54,20 @@ function garantirModalPerfil() {
     });
 }
 
-// 4. Abrir Perfil com Portfólio e Chat Interno
-function abrirPerfilPrestador(p) {
+// ==========================================
+// 4. ABRIR PERFIL DO PRESTADOR COM CHAT NUVEM
+// ==========================================
+async function abrirPerfilPrestador(p) {
     garantirModalPerfil();
     const containerModal = document.getElementById("conteudo-perfil-modal");
     
     const badgeHtml = p.is_piloto ? `<span class="badge-piloto"><i class="fa-solid fa-star"></i> Perfil Piloto / Exemplo</span><br>` : '';
     
-    // Portfólio
     let portfolioHtml = '<p style="color: var(--text-muted); font-size: 0.8rem;">Sem fotos de portfólio registadas.</p>';
     if (p.portfolio && p.portfolio.length > 0) {
         portfolioHtml = `<div class="portfolio-grid">
             ${p.portfolio.map(img => `<img src="${img}" class="portfolio-thumb" alt="Trabalho realizado">`).join('')}
         </div>`;
-    }
-
-    // Estrutura padrão de chat local temporária para demonstração do perfil selecionado
-    if (!p.mensagens) {
-        p.mensagens = [
-            { remetente: "recebida", texto: `Olá! Sou o/a ${p.nome}. Como posso ajudar com os meus serviços em ${p.municipio}?` }
-        ];
     }
 
     containerModal.innerHTML = `
@@ -81,9 +81,11 @@ function abrirPerfilPrestador(p) {
         <h3 style="font-size: 0.85rem; font-weight: 600; margin-top: 8px;">Portfólio de Trabalhos</h3>
         ${portfolioHtml}
 
-        <h3 style="font-size: 0.85rem; font-weight: 600; margin-top: 8px;">Chat Interno com o Prestador</h3>
+        <h3 style="font-size: 0.85rem; font-weight: 600; margin-top: 8px;">Chat Interno com o Prestador (Nuvem)</h3>
         <div class="chat-box-container">
-            <div id="chat-mensagens-${p.id}" class="chat-mensagens-list"></div>
+            <div id="chat-mensagens-${p.id}" class="chat-mensagens-list">
+                <p style="text-align: center; color: var(--text-muted); font-size: 0.8rem;">A carregar mensagens...</p>
+            </div>
             <div class="chat-input-row">
                 <input type="text" id="input-texto-chat-${p.id}" placeholder="Escreva uma mensagem segura...">
                 <button onclick="enviarMensagemInterna('${p.id}')">Enviar</button>
@@ -92,44 +94,84 @@ function abrirPerfilPrestador(p) {
     `;
 
     document.getElementById("modal-perfil-detalhe").style.display = "flex";
-    atualizarEcraChat(p);
+    
+    // Carrega o histórico persistente do Supabase
+    await carregarMensagensDaNuvem(p.id);
 }
 
-// 5. Atualizar o Ecrã de Chat
-function atualizarEcraChat(p) {
-    const listaMsg = document.getElementById(`chat-mensagens-${p.id}`);
+// ==========================================
+// 5. CARREGAR MENSAGENS DA TABELA 'mensagens_chat'
+// ==========================================
+async function carregarMensagensDaNuvem(idPrestador) {
+    const listaMsg = document.getElementById(`chat-mensagens-${idPrestador}`);
     if (!listaMsg) return;
 
-    listaMsg.innerHTML = p.mensagens.map(m => `
-        <div class="chat-msg ${m.remetente}">${m.texto}</div>
-    `).join('');
-    listaMsg.scrollTop = listaMsg.scrollHeight;
+    try {
+        const { data: mensagens, error } = await supabase
+            .from('mensagens_chat')
+            .select('*')
+            .eq('prestador_id', idPrestador)
+            .order('criado_em', { ascending: true });
+
+        if (error) throw error;
+
+        // Se o chat estiver vazio, cria uma mensagem de boas-vindas inicial na nuvem
+        if (!mensagens || mensagens.length === 0) {
+            await supabase.from('mensagens_chat').insert([
+                { prestador_id: idPrestador, remetente: 'recebida', texto: 'Olá! Como posso ajudar com os meus serviços?' }
+            ]);
+            return carregarMensagensDaNuvem(idPrestador);
+        }
+
+        listaMsg.innerHTML = mensagens.map(m => `
+            <div class="chat-msg ${m.remetente}">${m.texto}</div>
+        `).join('');
+        listaMsg.scrollTop = listaMsg.scrollHeight;
+
+    } catch (error) {
+        console.error("Erro ao carregar chat da nuvem:", error.message);
+        listaMsg.innerHTML = `<p style="color: red; font-size: 0.8rem; text-align: center;">Erro ao carregar mensagens.</p>`;
+    }
 }
 
-// 6. Enviar Mensagem no Chat Interno
-window.enviarMensagemInterna = function(idPrestador) {
+// ==========================================
+// 6. ENVIAR MENSAGEM PARA A NUVEM
+// ==========================================
+window.enviarMensagemInterna = async function(idPrestador) {
     const input = document.getElementById(`input-texto-chat-${idPrestador}`);
     if (!input || !input.value.trim()) return;
 
     const textoUser = input.value.trim();
-    const prestador = prestadoresCloud.find(x => x.id === idPrestador);
+    input.value = "";
 
-    if (prestador) {
-        if (!prestador.mensagens) prestador.mensagens = [];
-        
-        prestador.mensagens.push({ remetente: "enviada", texto: textoUser });
-        input.value = "";
-        atualizarEcraChat(prestador);
+    try {
+        const { error: erroEnvio } = await supabase
+            .from('mensagens_chat')
+            .insert([
+                { prestador_id: idPrestador, remetente: 'enviada', texto: textoUser }
+            ]);
 
-        // Resposta simulada automática do prestador
-        setTimeout(() => {
-            prestador.mensagens.push({ remetente: "recebida", texto: "Mensagem registada com sucesso na plataforma Huambo Plus!" });
-            atualizarEcraChat(prestador);
+        if (erroEnvio) throw erroEnvio;
+
+        await carregarMensagensDaNuvem(idPrestador);
+
+        // Resposta automática simulada gravada na nuvem após 1 segundo
+        setTimeout(async () => {
+            await supabase.from('mensagens_chat').insert([
+                { prestador_id: idPrestador, remetente: 'recebida', texto: 'Mensagem registada com sucesso na nuvem do Huambo Plus!' }
+            ]);
+            await carregarMensagensDaNuvem(idPrestador);
         }, 1000);
+
+    } catch (error) {
+        console.error("Erro ao enviar mensagem:", error.message);
+        alert("Não foi possível enviar a mensagem.");
     }
 };
 
-// 7. Renderizar a Grelha de Cartões
+// ==========================================
+// 7. RENDERIZAR GRELHA DE PRESTADORES
+// ==========================================
 function renderizarPrestadores(lista) {
     const container = document.getElementById("container-cards");
     if (!container) return;
@@ -159,7 +201,9 @@ function renderizarPrestadores(lista) {
     });
 }
 
-// 8. Inicialização Geral ao Carregar a Página
+// ==========================================
+// 8. INICIALIZAÇÃO DA APLICAÇÃO
+// ==========================================
 document.addEventListener("DOMContentLoaded", () => {
     carregarPrestadoresDaNuvem();
 
