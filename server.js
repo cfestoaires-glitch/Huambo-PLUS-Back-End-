@@ -1,103 +1,147 @@
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
+path = require('path');
 
 const app = express();
+const PORT = process.env.PORT || 3000;
 
-// Middlewares
+// Configuração de Middlewares
 app.use(cors());
 app.use(express.json());
-
-// Servir ficheiros estáticos da pasta public
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Leitura das variáveis de ambiente
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY;
+// Inicialização do Supabase Client
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_KEY;
 
 let supabase = null;
-
-// Inicialização segura do cliente Supabase
-if (supabaseUrl && supabaseKey) {
-    try {
-        supabase = createClient(supabaseUrl, supabaseKey);
-        console.log("✅ Conexão ao Supabase configurada com sucesso.");
-    } catch (err) {
-        console.error("❌ Erro ao inicializar o cliente Supabase:", err.message);
-    }
+if (SUPABASE_URL && SUPABASE_KEY) {
+    supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 } else {
-    console.error("⚠️ ATENÇÃO: SUPABASE_URL ou SUPABASE_KEY não foram encontradas no ambiente Render.");
+    console.warn("Aviso: Variáveis SUPABASE_URL ou SUPABASE_KEY não foram configuradas.");
 }
 
-// Middleware para verificar conexão à base de dados antes de processar rotas de API
-const verificarSupabase = (req, res, next) => {
-    if (!supabase) {
-        return res.status(500).json({ 
-            error: "Erro de configuração: Variáveis de ambiente SUPABASE_URL ou SUPABASE_KEY ausentes ou incorretas no Render." 
-        });
+// ------------------------------------------------------------------
+// 1. ROTA DE AUTENTICAÇÃO / LOGIN (ADMINISTRADOR E UTILIZADOR)
+// ------------------------------------------------------------------
+app.post('/api/login', async (req, res) => {
+    const { email, senha, tipo } = req.body;
+
+    // A. Acesso Especial para ADMINISTRADOR (Opção 1)
+    if (tipo === 'admin') {
+        if (email === 'admin@huamboplus.com' && senha === 'admin123') {
+            return res.json({
+                mensagem: 'Login de Administrador efetuado com sucesso',
+                usuario: {
+                    email: 'admin@huamboplus.com',
+                    tipo: 'admin',
+                    nome: 'Administrador Principal'
+                }
+            });
+        } else {
+            return res.status(401).json({ erro: 'Credenciais de Administrador incorretas.' });
+        }
     }
-    next();
-};
 
-/* ==========================================================================
-   ROTAS DA API (PRESTADORES)
-   ========================================================================== */
+    // B. Acesso para UTILIZADOR COMUM (Autenticação via Supabase)
+    if (!supabase) {
+        return res.status(500).json({ erro: 'Base de dados não configurada no servidor.' });
+    }
 
-// 1. Listar todos os prestadores de serviços
-app.get('/api/prestadores', verificarSupabase, async (req, res) => {
     try {
         const { data, error } = await supabase
-            .from('prestadores')
+            .from('usuarios')
             .select('*')
-            .order('created_at', { ascending: false });
+            .eq('email', email)
+            .eq('senha', senha)
+            .single();
 
-        if (error) throw error;
-        res.status(200).json(data);
+        if (error || !data) {
+            return res.status(401).json({ erro: 'Email ou senha de utilizador incorretos.' });
+        }
+
+        return res.json({
+            mensagem: 'Login de Utilizador efetuado com sucesso',
+            usuario: {
+                email: data.email,
+                tipo: 'usuario',
+                nome: data.nome || 'Utilizador'
+            }
+        });
     } catch (err) {
-        console.error("Erro ao procurar prestadores:", err.message);
-        res.status(500).json({ error: "Erro interno ao carregar prestadores." });
+        console.error('Erro na autenticação:', err);
+        return res.status(500).json({ erro: 'Erro interno no servidor ao processar o login.' });
     }
 });
 
-// 2. Cadastrar um novo prestador de serviços
-app.post('/api/prestadores', verificarSupabase, async (req, res) => {
-    try {
-        const { nome, profissao, categoria, municipio, telefone, nif, taxa, lat, lng } = req.body;
+// ------------------------------------------------------------------
+// 2. ROTAS DA API DE PRESTADORES DE SERVIÇOS
+// ------------------------------------------------------------------
 
-        if (!nome || !profissao || !categoria || !municipio || !telefone) {
-            return res.status(400).json({ error: "Campos obrigatórios em falta." });
+// Listar e pesquisar prestadores com filtros
+app.get('/api/prestadores', async (req, res) => {
+    if (!supabase) return res.json([]);
+
+    try {
+        const { q, municipio, categoria } = req.query;
+        let query = supabase.from('prestadores').select('*');
+
+        if (municipio) {
+            query = query.eq('municipio', municipio);
+        }
+        if (categoria) {
+            query = query.eq('categoria', categoria);
+        }
+        if (q) {
+            query = query.or(`nome.ilike.%${q}%,categoria.ilike.%${q}%`);
         }
 
-        const { data, error } = await supabase
-            .from('prestadores')
-            .insert([{
+        const { data, error } = await query;
+        if (error) throw error;
+
+        return res.json(data || []);
+    } catch (err) {
+        console.error('Erro ao buscar prestadores:', err);
+        return res.status(500).json({ erro: 'Erro ao buscar prestadores de serviços.' });
+    }
+});
+
+// Registar nova candidatura de prestador
+app.post('/api/prestadores', async (req, res) => {
+    if (!supabase) return res.status(500).json({ erro: 'Supabase não conectado.' });
+
+    try {
+        const { nome, nif, categoria, municipio, telefone, taxa } = req.body;
+
+        const { data, error } = await supabase.from('prestadores').insert([
+            {
                 nome,
-                profissao,
+                nif,
                 categoria,
                 municipio,
                 telefone,
-                nif: nif || null,
-                taxa_deslocacao: taxa || 0,
-                lat: lat || null,
-                lng: lng || null
-            }])
-            .select();
+                taxa_deslocacao: parseFloat(taxa) || 0
+            }
+        ]);
 
         if (error) throw error;
-        res.status(201).json({ message: "Prestador registado com sucesso!", data });
+
+        return res.status(201).json({ mensagem: 'Prestador registado com sucesso!', data });
     } catch (err) {
-        console.error("Erro ao cadastrar prestador:", err.message);
-        res.status(400).json({ error: err.message });
+        console.error('Erro ao registar prestador:', err);
+        return res.status(500).json({ erro: 'Erro ao guardar dados do prestador.' });
     }
 });
 
-/* ==========================================================================
-   ROTAS DA API (MURAL DE GRITOS)
-   ========================================================================== */
+// ------------------------------------------------------------------
+// 3. ROTAS DA API DO MURAL DE GRITOS
+// ------------------------------------------------------------------
 
-// 3. Listar todos os gritos
-app.get('/api/gritos', verificarSupabase, async (req, res) => {
+// Obter lista de pedidos de serviço do Mural
+app.get('/api/gritos', async (req, res) => {
+    if (!supabase) return res.json([]);
+
     try {
         const { data, error } = await supabase
             .from('gritos')
@@ -105,52 +149,45 @@ app.get('/api/gritos', verificarSupabase, async (req, res) => {
             .order('created_at', { ascending: false });
 
         if (error) throw error;
-        res.status(200).json(data);
+
+        return res.json(data || []);
     } catch (err) {
-        console.error("Erro ao procurar gritos:", err.message);
-        res.status(500).json({ error: "Erro interno ao carregar o mural de gritos." });
+        console.error('Erro ao procurar gritos:', err);
+        return res.status(500).json({ erro: 'Erro ao carregar o Mural de Gritos.' });
     }
 });
 
-// 4. Publicar um novo grito
-app.post('/api/gritos', verificarSupabase, async (req, res) => {
+// Publicar um novo pedido no Mural
+app.post('/api/gritos', async (req, res) => {
+    if (!supabase) return res.status(500).json({ erro: 'Supabase não conectado.' });
+
     try {
-        const { titulo, descricao, categoria, municipio, orcamento, contacto } = req.body;
+        const { titulo, municipio, descricao, telefone } = req.body;
 
-        if (!titulo || !descricao || !municipio || !contacto) {
-            return res.status(400).json({ error: "Campos obrigatórios em falta." });
-        }
-
-        const { data, error } = await supabase
-            .from('gritos')
-            .insert([{
+        const { data, error } = await supabase.from('gritos').insert([
+            {
                 titulo,
-                descricao,
-                categoria: categoria || null,
                 municipio,
-                orcamento: orcamento || 0,
-                contacto
-            }])
-            .select();
+                descricao,
+                telefone
+            }
+        ]);
 
         if (error) throw error;
-        res.status(201).json({ message: "Grito publicado com sucesso!", data });
+
+        return res.status(201).json({ mensagem: 'Grito publicado com sucesso!', data });
     } catch (err) {
-        console.error("Erro ao publicar grito:", err.message);
-        res.status(400).json({ error: err.message });
+        console.error('Erro ao publicar grito:', err);
+        return res.status(500).json({ erro: 'Erro ao registar pedido no Mural.' });
     }
 });
 
-/* ==========================================================================
-   ROTA FALLBACK (Single Page Application)
-   ========================================================================== */
-
+// Rota padrão para servir a aplicação web
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Inicialização do Servidor
-const PORT = process.env.PORT || 3000;
+// Iniciar Servidor Node.js
 app.listen(PORT, () => {
-    console.log(`🚀 Servidor Huambo Plus ativo na porta ${PORT}`);
+    console.log(`Servidor a executar na porta ${PORT}`);
 });
