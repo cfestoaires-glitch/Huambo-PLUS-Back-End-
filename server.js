@@ -4,7 +4,7 @@ const app = express();
 
 const PORT = process.env.PORT || 3000;
 
-// Obriga o servidor a servir os ficheiros da pasta public (index.html, app.js, etc.)
+// A LINHA QUE FALTAVA: Diz ao servidor para expor a pasta "public"
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.listen(PORT, () => {
