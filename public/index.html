@@ -11,36 +11,40 @@
     <!-- FontAwesome para Ícones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Leaflet CSS & JS (100% Gratuito / OpenStreetMap) -->
+    <!-- Leaflet CSS & JS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
 
-    <!-- Navegação Superior (Desktop e Header) -->
+    <!-- Navegação Superior -->
     <nav class="navbar">
         <div class="logo">Huambo<span>Plus</span></div>
         <div class="nav-actions">
-            <select id="seletor-idioma" style="background: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color); padding: 5px; border-radius: 6px;">
+            <select id="seletor-idioma" style="background: var(--bg-color); color: var(--text-color); border: 1px solid var(--border-color); padding: 6px 10px; border-radius: 6px; font-size: 0.85rem; outline: none;">
                 <option value="PT">PT</option>
                 <option value="EN">EN</option>
                 <option value="UMB">UMB</option>
             </select>
-            <button id="btn-tema" title="Alternar Tema" style="background: none; border: none; color: var(--text-color); font-size: 1.1rem; cursor: pointer; padding: 5px;"><i class="fa-solid fa-moon"></i></button>
+            <button id="btn-tema" title="Alternar Tema" style="background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-color); width: 34px; height: 34px; border-radius: 6px; font-size: 0.95rem; cursor: pointer; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-moon"></i></button>
             <div id="area-auth" style="display: inline-block;">
-                <button id="btn-login-modal" class="btn-primary" style="padding: 6px 14px; font-size: 0.9rem;">Entrar</button>
+                <button id="btn-login-modal" class="btn-primary" style="padding: 6px 14px; font-size: 0.85rem; border-radius: 6px;">Entrar</button>
             </div>
         </div>
     </nav>
 
-    <main class="container" style="padding-bottom: 90px;">
+    <main class="container">
         <!-- ABA 1: BUSCA E MAPA -->
         <section id="aba-busca" class="tab-content active">
-            <div class="search-bar" style="display: flex; flex-direction: column; gap: 10px;">
-                <input type="text" id="campo-busca" placeholder="O que precisa hoje? (Ex: Canalizador...)" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-color);">
+            <!-- CAIXA DE PESQUISA UNIFORME -->
+            <div class="search-container-box">
+                <div class="search-input-wrapper">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="campo-busca" placeholder="O que precisa hoje? (Ex: Professor, Luz...)">
+                </div>
                 
-                <div style="display: flex; gap: 10px;">
-                    <select id="filtro-municipio" style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-color);">
+                <div class="search-controls-row">
+                    <select id="filtro-municipio">
                         <option value="">Todos os Municípios</option>
                         <option value="Huambo">Huambo</option>
                         <option value="Caála">Caála</option>
@@ -49,36 +53,36 @@
                         <option value="Ukuma">Ukuma</option>
                     </select>
                     
-                    <button id="btn-executar-busca" class="btn-primary" style="padding: 10px 20px;"><i class="fa-solid fa-search"></i> Pesquisar</button>
+                    <button id="btn-executar-busca"><i class="fa-solid fa-search"></i> Pesquisar</button>
                 </div>
             </div>
 
-            <!-- GRELHA VISUAL DE CATEGORIAS (Estilo App Top 10) -->
-            <div style="margin: 20px 0 10px 0;">
-                <h3 style="font-size: 1rem; margin-bottom: 12px; color: var(--text-muted);">Categorias Populares</h3>
-                <div class="categorias-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; text-align: center;">
-                    <div class="cat-card" data-cat="Construção & Reparos - Canalizador" style="background: var(--card-bg); border: 1px solid var(--border-color); padding: 12px 5px; border-radius: 12px; cursor: pointer; transition: 0.2s;">
-                        <i class="fa-solid fa-faucet-drip" style="font-size: 1.4rem; color: var(--primary-color); margin-bottom: 6px;"></i>
-                        <span style="display: block; font-size: 0.75rem; font-weight: 600;">Canalização</span>
+            <!-- GRELHA VISUAL DE CATEGORIAS -->
+            <div class="categorias-section">
+                <h3>Categorias Populares</h3>
+                <div class="categorias-grid">
+                    <div class="cat-card" data-cat="Canalizador">
+                        <i class="fa-solid fa-faucet-drip" style="color: var(--primary-color);"></i>
+                        <span>Canalização</span>
                     </div>
-                    <div class="cat-card" data-cat="Construção & Reparos - Eletricista" style="background: var(--card-bg); border: 1px solid var(--border-color); padding: 12px 5px; border-radius: 12px; cursor: pointer; transition: 0.2s;">
-                        <i class="fa-solid fa-bolt" style="font-size: 1.4rem; color: #f1c40f; margin-bottom: 6px;"></i>
-                        <span style="display: block; font-size: 0.75rem; font-weight: 600;">Eletricista</span>
+                    <div class="cat-card" data-cat="Eletricista">
+                        <i class="fa-solid fa-bolt" style="color: #f1c40f;"></i>
+                        <span>Eletricista</span>
                     </div>
-                    <div class="cat-card" data-cat="Educação - Explicações" style="background: var(--card-bg); border: 1px solid var(--border-color); padding: 12px 5px; border-radius: 12px; cursor: pointer; transition: 0.2s;">
-                        <i class="fa-solid fa-graduation-cap" style="font-size: 1.4rem; color: #2ecc71; margin-bottom: 6px;"></i>
-                        <span style="display: block; font-size: 0.75rem; font-weight: 600;">Explicações</span>
+                    <div class="cat-card" data-cat="Educação - Explicações">
+                        <i class="fa-solid fa-graduation-cap" style="color: #2ecc71;"></i>
+                        <span>Explicações</span>
                     </div>
-                    <div class="cat-card" data-cat="Tecnologia - Informática" style="background: var(--card-bg); border: 1px solid var(--border-color); padding: 12px 5px; border-radius: 12px; cursor: pointer; transition: 0.2s;">
-                        <i class="fa-solid fa-laptop-code" style="font-size: 1.4rem; color: #3498db; margin-bottom: 6px;"></i>
-                        <span style="display: block; font-size: 0.75rem; font-weight: 600;">Informática</span>
+                    <div class="cat-card" data-cat="Tecnologia - Informática">
+                        <i class="fa-solid fa-laptop-code" style="color: #3498db;"></i>
+                        <span>Informática</span>
                     </div>
                 </div>
             </div>
-            <!-- Input oculto para reter a categoria selecionada visualmente -->
+            
             <input type="hidden" id="filtro-categoria" value="">
 
-            <div class="view-toggle" style="margin-top: 15px;">
+            <div class="view-toggle">
                 <button id="btn-view-cards" class="active"><i class="fa-solid fa-list"></i> Lista</button>
                 <button id="btn-view-map"><i class="fa-solid fa-map-location-dot"></i> Mapa</button>
             </div>
@@ -86,23 +90,23 @@
             <!-- Grelha de Prestadores -->
             <div id="container-cards" class="cards-grid"></div>
 
-            <!-- Contentor do Mapa (Leaflet) -->
+            <!-- Contentor do Mapa -->
             <div id="map-container" class="map-hidden">
-                <div id="map" style="width: 100%; height: 100%; min-height: 400px;"></div>
+                <div id="map" style="width: 100%; height: 100%;"></div>
             </div>
         </section>
 
         <!-- ABA 2: MURAL DE GRITOS -->
         <section id="aba-gritos" class="tab-content">
-            <div class="gritos-header">
-                <h2>Mural de Pedidos Rápidos (Gritos)</h2>
-                <button id="btn-novo-grito" class="btn-primary"><i class="fa-solid fa-plus"></i> Publicar Grito</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h2 style="font-size: 1.15rem; font-weight: 700;">Mural de Pedidos</h2>
+                <button id="btn-novo-grito" class="btn-primary" style="padding: 8px 14px; font-size: 0.85rem;"><i class="fa-solid fa-plus"></i> Novo Grito</button>
             </div>
             
-            <form id="form-novo-grito" class="form-box" style="display: none; margin-bottom: 25px;">
+            <form id="form-novo-grito" class="form-box" style="display: none; margin-bottom: 20px;">
                 <h3>Novo Pedido de Serviço</h3>
                 <label>Título do Pedido</label>
-                <input type="text" id="grito-titulo" placeholder="Ex: Preciso urgente de um canalizador na Cidade Alta" required>
+                <input type="text" id="grito-titulo" placeholder="Ex: Preciso de um canalizador..." required>
                 <label>Município</label>
                 <select id="grito-municipio" required>
                     <option value="Huambo">Huambo</option>
@@ -111,28 +115,28 @@
                 </select>
                 <label>Descrição Detalhada</label>
                 <textarea id="grito-descricao" rows="3" placeholder="Descreva o problema..." required></textarea>
-                <label>Telefone / WhatsApp para Contacto</label>
+                <label>Telefone / WhatsApp</label>
                 <input type="text" id="grito-telefone" placeholder="+244 ..." required>
                 <button type="submit" class="btn-primary">Publicar no Mural</button>
             </form>
 
-            <div id="container-gritos" class="gritos-list"></div>
+            <div id="container-gritos" class="cards-grid"></div>
         </section>
 
         <!-- ABA 3: REGISTO DE PRESTADOR -->
         <section id="aba-registo" class="tab-content">
-            <h2>Candidatura de Prestador de Serviços</h2>
             <form id="form-prestador" class="form-box">
+                <h2>Candidatura de Prestador</h2>
                 <label>Nome Completo</label>
                 <input type="text" id="reg-nome" required>
 
-                <label>NIF</label>
-                <input type="text" id="reg-nif" placeholder="Opcional">
+                <label>NIF (Opcional)</label>
+                <input type="text" id="reg-nif">
 
                 <label>Categoria / Profissão</label>
                 <select id="reg-categoria" required>
-                    <option value="Construção & Reparos - Canalizador">Canalizador</option>
-                    <option value="Construção & Reparos - Eletricista">Eletricista</option>
+                    <option value="Canalizador">Canalizador</option>
+                    <option value="Eletricista">Eletricista</option>
                     <option value="Educação - Explicações">Professor / Explicador</option>
                     <option value="Tecnologia - Informática">Técnico de Informática</option>
                 </select>
@@ -150,21 +154,21 @@
                 <label>Taxa de Deslocação (Kz)</label>
                 <input type="number" id="reg-taxa" value="0">
 
-                <button type="submit" class="btn-primary">Submeter Candidatura (GPS Automático)</button>
+                <button type="submit" class="btn-primary" style="margin-top: 4px;">Submeter Candidatura (GPS)</button>
             </form>
         </section>
     </main>
 
-    <!-- BARRA DE NAVEGAÇÃO INFERIOR FIXA (Estilo App Nativo Mobile) -->
-    <nav class="bottom-nav" style="position: fixed; bottom: 0; left: 0; width: 100%; background: var(--card-bg); border-top: 1px solid var(--border-color); display: flex; justify-content: space-around; padding: 10px 0; z-index: 1000; box-shadow: 0 -2px 10px rgba(0,0,0,0.1);">
-        <button class="nav-btn active" data-tab="busca" style="background: none; border: none; color: var(--primary-color); display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 0.75rem; cursor: pointer; flex: 1;">
-            <i class="fa-solid fa-magnifying-glass" style="font-size: 1.2rem;"></i> Buscar
+    <!-- BARRA DE NAVEGAÇÃO INFERIOR FIXA -->
+    <nav class="bottom-nav">
+        <button class="nav-btn active" data-tab="busca">
+            <i class="fa-solid fa-magnifying-glass"></i> Buscar
         </button>
-        <button class="nav-btn" data-tab="gritos" style="background: none; border: none; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 0.75rem; cursor: pointer; flex: 1;">
-            <i class="fa-solid fa-bullhorn" style="font-size: 1.2rem;"></i> Gritos
+        <button class="nav-btn" data-tab="gritos">
+            <i class="fa-solid fa-bullhorn"></i> Gritos
         </button>
-        <button class="nav-btn" data-tab="registo" style="background: none; border: none; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 0.75rem; cursor: pointer; flex: 1;">
-            <i class="fa-solid fa-user-plus" style="font-size: 1.2rem;"></i> Registar
+        <button class="nav-btn" data-tab="registo">
+            <i class="fa-solid fa-user-plus"></i> Registar
         </button>
     </nav>
 
@@ -172,21 +176,21 @@
     <div id="modal-login" class="modal">
         <div class="modal-content">
             <span class="close-modal" id="btn-fechar-modal">&times;</span>
-            <h2>Acessar Conta</h2>
-            <form id="form-login">
-                <label>Tipo de Conta</label>
-                <select id="login-tipo" required>
+            <h2 style="margin-bottom: 16px;">Acessar Conta</h2>
+            <form id="form-login" style="display: flex; flex-direction: column; gap: 12px;">
+                <label style="font-size:0.85rem; font-weight:600; color:var(--text-muted);">Tipo de Conta</label>
+                <select id="login-tipo" required style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); background-color: var(--bg-color); color: var(--text-color); font-size: 0.95rem;">
                     <option value="usuario">Utilizador Comum</option>
                     <option value="admin">Administrador</option>
                 </select>
 
-                <label>Email</label>
-                <input type="email" id="login-email" required>
+                <label style="font-size:0.85rem; font-weight:600; color:var(--text-muted);">Email</label>
+                <input type="email" id="login-email" required style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); background-color: var(--bg-color); color: var(--text-color); font-size: 0.95rem;">
 
-                <label>Senha</label>
-                <input type="password" id="login-senha" required>
+                <label style="font-size:0.85rem; font-weight:600; color:var(--text-muted);">Senha</label>
+                <input type="password" id="login-senha" required style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); background-color: var(--bg-color); color: var(--text-color); font-size: 0.95rem;">
 
-                <button type="submit" class="btn-primary" style="width: 100%; margin-top: 15px;">Entrar</button>
+                <button type="submit" class="btn-primary" style="width: 100%; margin-top: 8px;">Entrar</button>
             </form>
         </div>
     </div>
