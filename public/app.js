@@ -1,7 +1,9 @@
 // ==========================================
-// TESTE DE ARRANQUE
+// APANHADOR DE ERROS PARA TELEMÓVEL
 // ==========================================
-alert("O app.js arrancou!");
+window.onerror = function(msg, url, line) {
+    alert("ERRO: " + msg + " na linha " + line);
+};
 
 // ==========================================
 // 1. CONFIGURAÇÃO DO SUPABASE
@@ -16,8 +18,12 @@ let prestadoresCloud = [];
 // 2. INICIALIZAÇÃO DA APLICAÇÃO
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
-    configurarEcraInicial();
-    carregarPrestadoresAprovados();
+    try {
+        configurarEcraInicial();
+        carregarPrestadoresAprovados();
+    } catch (err) {
+        alert("Erro no arranque: " + err.message);
+    }
 });
 
 // ==========================================
@@ -62,7 +68,6 @@ function configurarEcraInicial() {
         </div>
     `;
 
-    // Atribuir eventos aos botões do menu
     document.getElementById("btn-perfil-cliente").addEventListener("click", mostrarSecaoCliente);
     document.getElementById("btn-perfil-prestador").addEventListener("click", mostrarSecaoPrestador);
     document.getElementById("btn-perfil-admin").addEventListener("click", mostrarSecaoAdminLogin);
@@ -82,7 +87,7 @@ function mostrarSecaoCliente() {
     `;
 
     document.getElementById("btn-ir-para-busca").addEventListener("click", () => {
-        alert("Consulte a aba de pesquisa ou lista de prestadores na aplicação.");
+        alert("Consulte a lista de prestadores disponíveis na página.");
     });
 }
 
@@ -139,14 +144,12 @@ function mostrarSecaoPrestador() {
             const nomeSelfie = `selfie_${Date.now()}_${fileSelfie.name}`;
             const nomeBi = `bi_${Date.now()}_${fileBi.name}`;
 
-            // Enviar ficheiros para o bucket do Supabase
             await supabase.storage.from('documentos-prestadores').upload(nomeSelfie, fileSelfie);
             await supabase.storage.from('documentos-prestadores').upload(nomeBi, fileBi);
 
             const urlSelfie = supabase.storage.from('documentos-prestadores').getPublicUrl(nomeSelfie).data.publicUrl;
             const urlBi = supabase.storage.from('documentos-prestadores').getPublicUrl(nomeBi).data.publicUrl;
 
-            // Inserir na tabela prestadores com status pendente
             const { error } = await supabase.from('prestadores').insert([{
                 nome, categoria, municipio, telefone, taxa: Number(taxa),
                 status: 'pendente', foto_selfie: urlSelfie, foto_bi: urlBi
