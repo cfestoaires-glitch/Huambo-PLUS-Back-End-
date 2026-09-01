@@ -1,5 +1,5 @@
 // ============================================================
-//  CONFIGURAÇÃO SUPABASE (substitui pelos teus valores)
+//  CONFIGURAÇÃO SUPABASE
 // ============================================================
 const SUPABASE_URL = 'https://vpuKKvxnlwyhoqpgckzh.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_726ASiOd_Urr5agzhw6Mzw_3cqIZyTf';
@@ -14,12 +14,11 @@ let GRITOS = [];
 let PRESTADORES = [];
 let CANDIDATOS = [];
 let POSICAO_USUARIO = null;
-let MAPA_INSTANCIA = null;
 let IDIOMA_ATUAL = 'pt';
 let DARK_MODE = localStorage.getItem('huambo_dark') === 'true';
 
 // ============================================================
-//  FUNÇÃO PARA MOSTRAR TELA (DEFINIDA ANTES DE TUDO)
+//  CONTROLE DE TELAS E INICIALIZAÇÃO
 // ============================================================
 function mostrarTela(id) {
     document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
@@ -27,141 +26,136 @@ function mostrarTela(id) {
     if (tela) tela.classList.add('active');
 }
 
-// ============================================================
-//  TELA DE LOGIN FORÇADA (FALLBACK)
-// ============================================================
 function forcarLogin() {
-    console.log('⏰ Forçando tela de login (fallback).');
-    mostrarTela('login');
+    if (!currentUser) {
+        console.log('⏰ Redirecionando para tela de login.');
+        mostrarTela('login');
+    }
 }
 
-// ============================================================
-//  INICIALIZAR SUPABASE (CORRIGIDO)
-// ============================================================
 document.addEventListener('DOMContentLoaded', function() {
-    // Mostrar login após 2 segundos (sempre – fallback)
+    // Fallback de segurança para garantir exibição do login se não houver sessão ativa
     setTimeout(forcarLogin, 2000);
 
-    // Tentar inicializar Supabase
     if (typeof window.supabase !== 'undefined') {
         try {
-            supabase = window.supabase.createClient(
-                SUPABASE_URL,
-                SUPABASE_ANON_KEY
-            );
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             console.log('✅ Supabase inicializado');
-            // Se o Supabase carregar, verificamos a sessão
             verificarSessao();
         } catch (e) {
             console.error('Erro ao inicializar Supabase:', e);
         }
     } else {
-        console.warn('⚠️ Supabase não disponível. Apenas login visível.');
+        console.warn('⚠️ Supabase JS SDK não carregado no HTML.');
     }
 });
 
 // ============================================================
-//  VERIFICAR SESSÃO (se Supabase disponível)
+//  SESSÃO E AUTENTICAÇÃO
 // ============================================================
 async function verificarSessao() {
     if (!supabase) return;
     try {
         const { data } = await supabase.auth.getSession();
-        if (data.session) {
+        if (data?.session) {
             const { data: perfil } = await supabase
                 .from('perfis')
                 .select('*')
                 .eq('id', data.session.user.id)
                 .single();
-            currentUser = perfil || { id: data.session.user.id, nome: data.session.user.email };
-            iniciarApp();
+                
+            currentUser = perfil || { id: data.session.user.id, nome: data.session.user.email, email: data.session.user.email };
+            await iniciarApp();
         }
     } catch (e) {
         console.error('Erro ao verificar sessão:', e);
     }
 }
 
-// ============================================================
-//  FUNÇÕES DE AUTENTICAÇÃO
-// ============================================================
 async function handleLogin() {
-    if (!supabase) {
-        mostrarToast('Supabase não disponível. Recarrega a página.');
-        return;
-    }
-    const email = document.getElementById('loginEmail').value;
-    const pass = document.getElementById('loginPassword').value;
+    if (!supabase) return mostrarToast('Supabase indisponível. Recarregue a página.');
+    
+    const email = document.getElementById('loginEmail')?.value.trim();
+    const pass = document.getElementById('loginPassword')?.value.trim();
     const msg = document.getElementById('loginMsg');
+
     if (!email || !pass) {
-        msg.textContent = 'Preencha todos os campos.';
+        if (msg) msg.textContent = 'Preencha todos os campos.';
         return;
     }
 
     try {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
-        if (error) {
-            msg.textContent = 'Erro: ' + error.message;
-            return;
-        }
+        if (error) throw error;
+
         const { data: perfil } = await supabase
             .from('perfis')
             .select('*')
             .eq('id', data.user.id)
             .single();
+
         if (!perfil) {
-            await supabase.from('perfis').insert([{ id: data.user.id, nome: email, tipo: 'CLIENTE' }]);
-            currentUser = { id: data.user.id, nome: email, tipo: 'CLIENTE' };
+            const novoPerfil = { id: data.user.id, nome: email, email: email, tipo: 'CLIENTE' };
+            await supabase.from('perfis').insert([novoPerfil]);
+            currentUser = novoPerfil;
         } else {
             currentUser = perfil;
         }
-        msg.textContent = '';
-        mostrarToast('Bem-vindo, ' + currentUser.nome);
+
+        if (msg) msg.textContent = '';
+        mostrarToast('Bem-vindo, ' + (currentUser.nome || email));
         iniciarApp();
     } catch (e) {
-        msg.textContent = 'Erro: ' + e.message;
+        if (msg) msg.textContent = 'Erro: ' + e.message;
     }
 }
 
 async function handleRegister() {
-    if (!supabase) {
-        mostrarToast('Supabase não disponível. Recarrega a página.');
-        return;
-    }
-    const email = document.getElementById('loginEmail').value;
-    const pass = document.getElementById('loginPassword').value;
+    if (!supabase) return mostrarToast('Supabase indisponível.');
+    
+    const email = document.getElementById('loginEmail')?.value.trim();
+    const pass = document.getElementById('loginPassword')?.value.trim();
     const msg = document.getElementById('loginMsg');
+
     if (!email || !pass) {
-        msg.textContent = 'Preencha todos os campos.';
+        if (msg) msg.textContent = 'Preencha todos os campos.';
         return;
     }
+
     try {
         const { data, error } = await supabase.auth.signUp({ email, password: pass });
-        if (error) {
-            msg.textContent = 'Erro: ' + error.message;
-            return;
+        if (error) throw error;
+
+        if (data.user) {
+            await supabase.from('perfis').insert([{ id: data.user.id, nome: email, email: email, tipo: 'CLIENTE' }]);
+            if (msg) {
+                msg.textContent = 'Registo efetuado! Faça login para continuar.';
+                msg.className = 'login-msg success';
+                setTimeout(() => { msg.className = 'login-msg'; }, 4000);
+            }
         }
-        await supabase.from('perfis').insert([{ id: data.user.id, nome: email, tipo: 'CLIENTE' }]);
-        msg.textContent = 'Registado! Faça login.';
-        msg.className = 'login-msg success';
-        setTimeout(() => { msg.className = 'login-msg'; }, 3000);
     } catch (e) {
-        msg.textContent = 'Erro: ' + e.message;
+        if (msg) msg.textContent = 'Erro: ' + e.message;
     }
 }
 
 async function logout() {
     if (supabase) await supabase.auth.signOut();
     currentUser = null;
-    if (socket) socket.disconnect();
+    if (socket) {
+        socket.disconnect();
+        socket = null;
+    }
     mostrarTela('login');
     mostrarToast('Sessão encerrada.');
 }
 
 // ============================================================
-//  FUNÇÕES DE UI (Toast, Tabs, etc.)
+//  UI UTILS & ESTADOS
 // ============================================================
 function mostrarToast(msg) {
     const t = document.getElementById('toast');
+    if (!t) return;
     t.textContent = msg;
     t.classList.add('show');
     clearTimeout(t._timer);
@@ -180,7 +174,8 @@ function toggleDarkMode() {
     DARK_MODE = !DARK_MODE;
     document.body.classList.toggle('dark-mode', DARK_MODE);
     localStorage.setItem('huambo_dark', DARK_MODE);
-    document.getElementById('darkIcon').className = DARK_MODE ? 'fas fa-sun' : 'fas fa-moon';
+    const icon = document.getElementById('darkIcon');
+    if (icon) icon.className = DARK_MODE ? 'fas fa-sun' : 'fas fa-moon';
 }
 
 function setLoginTipo(tipo) {
@@ -188,7 +183,8 @@ function setLoginTipo(tipo) {
     document.querySelectorAll('.login-tabs button').forEach(b => {
         if (b.textContent.trim().toLowerCase().includes(tipo)) b.classList.add('active');
     });
-    document.getElementById('adminCodeField').style.display = tipo === 'admin' ? 'block' : 'none';
+    const adminField = document.getElementById('adminCodeField');
+    if (adminField) adminField.style.display = tipo === 'admin' ? 'block' : 'none';
 }
 
 function mudarIdioma(lang) {
@@ -199,93 +195,107 @@ function mudarIdioma(lang) {
 }
 
 // ============================================================
-//  CARREGAR DADOS DO SUPABASE (se disponível)
+//  CARREGAMENTO DE DADOS
 // ============================================================
 async function carregarDados() {
     if (!supabase) return;
     try {
         const { data: prestadores } = await supabase.from('prestadores').select('*');
         PRESTADORES = prestadores || [];
+
         const { data: gritos } = await supabase.from('gritos').select('*');
         GRITOS = gritos || [];
+
         if (currentUser) {
             const { data: favs } = await supabase
                 .from('favoritos')
                 .select('prestador_id')
                 .eq('user_id', currentUser.id);
             FAVORITOS = favs?.map(f => f.prestador_id) || [];
-            document.getElementById('favBadge').textContent = FAVORITOS.length;
+            
+            const badgeFav = document.getElementById('favBadge');
+            if (badgeFav) badgeFav.textContent = FAVORITOS.length;
         }
-        const { data: candidatos } = await supabase
-            .from('candidatos')
-            .select('*')
-            .eq('status', 'PENDENTE');
-        CANDIDATOS = candidatos || [];
-        document.getElementById('gritoBadge').textContent = GRITOS.filter(g => g.status === 'ABERTO').length;
+
+        const badgeGrito = document.getElementById('gritoBadge');
+        if (badgeGrito) badgeGrito.textContent = GRITOS.filter(g => g.status === 'ABERTO').length;
+
     } catch (e) {
         console.error('Erro ao carregar dados:', e);
     }
 }
 
 // ============================================================
-//  SOCKET.IO (CHAT) – apenas se houver utilizador
+//  SOCKET.IO & CHAT
 // ============================================================
 function conectarSocket() {
-    if (!currentUser) return;
+    if (!currentUser || (socket && socket.connected)) return;
+
     socket = io();
+
     socket.on('connect', () => console.log('🔌 Socket conectado'));
+
     socket.on('chat_history', (msgs) => {
         const container = document.getElementById('chatContainer');
         if (!container) return;
         container.innerHTML = msgs.map(m =>
-            `<div class="chat-msg ${m.user_id === currentUser.id ? 'me' : 'other'}">${m.nome}: ${m.texto}</div>`
+            `<div class="chat-msg ${m.user_id === currentUser.id ? 'me' : 'other'}">
+                <strong>${m.nome}:</strong> ${m.texto}
+             </div>`
         ).join('');
         container.scrollTop = container.scrollHeight;
     });
+
     socket.on('new_message', (m) => {
         const container = document.getElementById('chatContainer');
         if (!container) return;
         const div = document.createElement('div');
         div.className = `chat-msg ${m.user_id === currentUser.id ? 'me' : 'other'}`;
-        div.textContent = m.nome + ': ' + m.texto;
+        div.innerHTML = `<strong>${m.nome}:</strong> ${m.texto}`;
         container.appendChild(div);
         container.scrollTop = container.scrollHeight;
     });
 }
 
 function abrirChat(prestadorId) {
-    if (!currentUser) { mostrarToast('Faça login.'); return; }
+    if (!currentUser) return mostrarToast('Faça login para iniciar conversas.');
     currentPrestadorId = prestadorId;
+
     if (!socket) conectarSocket();
+
     socket.emit('join_chat', { userId: currentUser.id, prestadorId });
-    document.getElementById('modalChat').classList.add('open');
+    document.getElementById('modalChat')?.classList.add('open');
+    
     const p = PRESTADORES.find(x => x.id === prestadorId);
-    document.getElementById('chatTitulo').textContent = 'Chat com ' + (p ? p.nome : 'Prestador');
+    const titulo = document.getElementById('chatTitulo');
+    if (titulo) titulo.textContent = 'Chat com ' + (p ? p.nome : 'Prestador');
 }
 
 function enviarMensagemChat() {
     const input = document.getElementById('chatInput');
-    const texto = input.value.trim();
-    if (!texto || !currentPrestadorId) return;
+    const texto = input?.value.trim();
+    if (!texto || !currentPrestadorId || !currentUser) return;
+
     socket.emit('send_message', {
         userId: currentUser.id,
         prestadorId: currentPrestadorId,
         texto,
-        nome: currentUser.nome
+        nome: currentUser.nome || currentUser.email
     });
     input.value = '';
 }
 
 function fecharModalChat() {
-    document.getElementById('modalChat').classList.remove('open');
+    document.getElementById('modalChat')?.classList.remove('open');
 }
 
 // ============================================================
-//  RENDERIZAR CONTEÚDO (APENAS SE HOUVER DADOS)
+//  RENDERIZAÇÃO DA INTERFACE
 // ============================================================
 function renderizarConteudo() {
     const container = document.getElementById('mainContent');
     if (!container) return;
+
     switch (TAB_ATUAL) {
         case 'home': container.innerHTML = renderHome(); break;
         case 'busca': container.innerHTML = renderBusca(); break;
@@ -300,121 +310,211 @@ function renderizarConteudo() {
 
 function renderHome() {
     const destaques = PRESTADORES.filter(p => p.destaque).slice(0, 5);
-    let html = `<div class="cat-grid">${['Saúde','Construção','Educação','Tecnologia'].map(c => `<div class="cat-main" onclick="mudarTab('busca'); setTimeout(()=>{ document.getElementById('filtroCategoria').value='${c}'; filtrarBusca(); },100);"><i class="fas fa-tag"></i> ${c}</div>`).join('')}</div>`;
-    html += `<h3 style="margin:12px 0;">⭐ Destaques</h3>`;
-    destaques.forEach(p => html += renderCard(p));
+    const categorias = ['Saúde', 'Construção', 'Educação', 'Tecnologia'];
+    
+    let html = `<div class="cat-grid">
+        ${categorias.map(c => `
+            <div class="cat-main" onclick="mudarTab('busca'); setTimeout(()=>{ const f = document.getElementById('filtroCategoria'); if(f){ f.value='${c}'; filtrarBusca(); } }, 100);">
+                <i class="fas fa-tag"></i> ${c}
+            </div>`).join('')}
+    </div>`;
+    
+    html += `<h3 style="margin: 16px 0 12px 0;">⭐ Destaques</h3>`;
+    if (destaques.length === 0) {
+        html += '<div class="sem-res">Sem prestadores em destaque no momento.</div>';
+    } else {
+        destaques.forEach(p => html += renderCard(p));
+    }
     return html;
 }
 
 function renderBusca() {
-    const municipios = ['Todos', ...new Set(PRESTADORES.map(p => p.municipio))];
-    const cats = ['Todas', ...new Set(PRESTADORES.map(p => p.categoria))];
-    return `<div class="search-wrapper"><i class="fas fa-search"></i><input type="text" id="buscaInput" placeholder="Buscar..."></div>
-        <div id="map" style="height:200px;border-radius:16px;margin:12px 0;"></div>
-        <div class="filtros"><select id="filtroMunicipio">${municipios.map(m => `<option value="${m}">${m}</option>`).join('')}</select><select id="filtroCategoria">${cats.map(c => `<option value="${c}">${c}</option>`).join('')}</select></div>
-        <button class="btn-filtrar" onclick="filtrarBusca()">Filtrar</button>
-        <div id="resultadosBusca"></div>`;
+    const municipios = ['Todos', ...new Set(PRESTADORES.map(p => p.municipio).filter(Boolean))];
+    const cats = ['Todas', ...new Set(PRESTADORES.map(p => p.categoria).filter(Boolean))];
+
+    return `
+        <div class="search-wrapper">
+            <i class="fas fa-search"></i>
+            <input type="text" id="buscaInput" placeholder="Buscar serviços ou profissionais..." oninput="filtrarBusca()">
+        </div>
+        <div id="map" style="height:180px; border-radius:16px; margin:12px 0; background:var(--cinza-bg, #f0f0f0);"></div>
+        <div class="filtros">
+            <select id="filtroMunicipio" onchange="filtrarBusca()">
+                ${municipios.map(m => `<option value="${m}">${m}</option>`).join('')}
+            </select>
+            <select id="filtroCategoria" onchange="filtrarBusca()">
+                ${cats.map(c => `<option value="${c}">${c}</option>`).join('')}
+            </select>
+        </div>
+        <div id="resultadosBusca" style="margin-top: 12px;">
+            ${PRESTADORES.map(p => renderCard(p)).join('')}
+        </div>`;
 }
 
 function renderGritos() {
-    let html = `<button class="btn-grito" onclick="abrirModalGrito()">+ Novo Grito</button>`;
-    if (GRITOS.length === 0) html += '<div class="sem-res">Nenhum pedido.</div>';
-    else GRITOS.forEach(g => html += `<div class="grito-card"><div class="titulo">${g.titulo}</div><div class="desc">${g.descricao}</div><div class="meta"><span>${g.categoria}</span><span>${g.municipio}</span><span class="status status-aberto">${g.status}</span></div></div>`);
+    let html = `<button class="btn-grito" onclick="abrirModalGrito()">+ Publicar Grito de Socorro</button>`;
+    if (GRITOS.length === 0) {
+        html += '<div class="sem-res">Nenhum pedido de socorro ativo.</div>';
+    } else {
+        GRITOS.forEach(g => {
+            html += `
+                <div class="grito-card">
+                    <div class="titulo">${g.titulo}</div>
+                    <div class="desc">${g.descricao}</div>
+                    <div class="meta">
+                        <span>🏷️ ${g.categoria}</span>
+                        <span>📍 ${g.municipio}</span>
+                        <span class="status status-aberto">${g.status}</span>
+                    </div>
+                </div>`;
+        });
+    }
     return html;
 }
 
 function renderFavoritos() {
     const favs = PRESTADORES.filter(p => FAVORITOS.includes(p.id));
-    return favs.length ? favs.map(p => renderCard(p)).join('') : '<div class="sem-res">Sem favoritos.</div>';
+    return favs.length ? favs.map(p => renderCard(p)).join('') : '<div class="sem-res">Nenhum prestador favorito guardado.</div>';
 }
 
 function renderCentral() {
-    if (!currentUser) return '<div class="sem-res">Faça login.</div>';
+    if (!currentUser) return '<div class="sem-res">Faça login para aceder à central.</div>';
     const prestador = PRESTADORES.find(p => p.user_id === currentUser.id);
-    if (!prestador) return '<div class="sem-res">Não és prestador. Regista-te!</div>';
-    return `<div class="central-prof"><h3>Central - ${prestador.nome}</h3><p>Leads: ${prestador.leads?.length || 0}</p></div>`;
+    if (!prestador) return '<div class="sem-res">Ainda não és um prestador registado. Solicita a tua conta no perfil!</div>';
+    return `<div class="central-prof"><h3>Central do Prestador - ${prestador.nome}</h3><p>Oportunidades de Leads: <strong>${prestador.leads?.length || 0}</strong></p></div>`;
 }
 
 function renderPerfil() {
-    if (!currentUser) return '<div class="sem-res">Faça login.</div>';
-    return `<div class="perfil-header"><div class="avatar">👤</div><div class="nome">${currentUser.nome}</div><div class="email">${currentUser.email}</div></div><div class="perfil-info"><div class="linha"><span>Telefone</span><span>${currentUser.telefone || 'N/A'}</span></div></div><button class="btn-login" onclick="abrirModalRegistoPrestador()">Registar como Prestador</button><button class="btn-sair" onclick="logout()">Sair</button>`;
+    if (!currentUser) return '<div class="sem-res">Faça login para ver o perfil.</div>';
+    return `
+        <div class="perfil-header">
+            <div class="avatar">👤</div>
+            <div class="nome">${currentUser.nome || 'Utilizador'}</div>
+            <div class="email">${currentUser.email || ''}</div>
+        </div>
+        <div class="perfil-info">
+            <div class="linha"><span>Telefone</span><span>${currentUser.telefone || 'Não registado'}</span></div>
+        </div>
+        <button class="btn-login" style="margin-top:16px;" onclick="abrirModalRegistoPrestador()">Registar como Prestador</button>
+        <button class="btn-sair" style="margin-top:10px;" onclick="logout()">Encerrar Sessão</button>`;
 }
 
 function renderCard(p) {
     const isFav = FAVORITOS.includes(p.id);
-    return `<div class="card" data-id="${p.id}"><div class="top"><div><div class="nome">${p.nome}</div><div class="tags">${p.categorias?.slice(0,2).map(c => `<span>${c}</span>`).join('') || ''}</div></div><span class="tipo-badge">${p.tipo || 'Profissional'}</span></div><div class="rating">⭐ ${p.avaliacao_media || 0}</div><div class="bottom"><span class="local">📍 ${p.municipio}</span><span class="preco">${p.preco_base > 0 ? p.preco_base+' Kz' : 'Sob consulta'}</span><button class="fav-btn ${isFav ? 'active' : ''}" onclick="event.stopPropagation(); toggleFavorito('${p.id}')"><i class="fas fa-heart"></i></button><button class="chat-btn" onclick="event.stopPropagation(); abrirChat('${p.id}')"><i class="fas fa-comment"></i></button></div></div>`;
+    const categorias = p.categorias || (p.categoria ? [p.categoria] : []);
+    
+    return `
+        <div class="card" data-id="${p.id}">
+            <div class="top">
+                <div>
+                    <div class="nome">${p.nome}</div>
+                    <div class="tags">${categorias.slice(0, 2).map(c => `<span>${c}</span>`).join('')}</div>
+                </div>
+                <span class="tipo-badge">${p.tipo || 'Profissional'}</span>
+            </div>
+            <div class="rating">⭐ ${p.avaliacao_media || '0.0'}</div>
+            <div class="bottom">
+                <span class="local">📍 ${p.municipio || 'Huambo'}</span>
+                <span class="preco">${p.preco_base > 0 ? p.preco_base + ' Kz' : 'Sob consulta'}</span>
+                <button class="fav-btn ${isFav ? 'active' : ''}" onclick="event.stopPropagation(); toggleFavorito('${p.id}')">
+                    <i class="fas fa-heart"></i>
+                </button>
+                <button class="chat-btn" onclick="event.stopPropagation(); abrirChat('${p.id}')">
+                    <i class="fas fa-comment"></i>
+                </button>
+            </div>
+        </div>`;
 }
 
+// ============================================================
+//  AÇÕES E EVENTOS DA APLICAÇÃO
+// ============================================================
 function filtrarBusca() {
     const termo = document.getElementById('buscaInput')?.value?.toLowerCase() || '';
     const mun = document.getElementById('filtroMunicipio')?.value || 'Todos';
     const cat = document.getElementById('filtroCategoria')?.value || 'Todas';
+
     let filtrados = PRESTADORES.filter(p => {
-        const matchTermo = p.nome.toLowerCase().includes(termo) || p.descricao?.toLowerCase().includes(termo);
+        const matchTermo = p.nome.toLowerCase().includes(termo) || (p.descricao && p.descricao.toLowerCase().includes(termo));
         const matchMun = mun === 'Todos' || p.municipio === mun;
-        const matchCat = cat === 'Todas' || p.categoria === cat;
+        const matchCat = cat === 'Todas' || p.categoria === cat || (p.categorias && p.categorias.includes(cat));
         return matchTermo && matchMun && matchCat;
     });
+
     const container = document.getElementById('resultadosBusca');
     if (!container) return;
-    if (!filtrados.length) { container.innerHTML = '<div class="sem-res">Nenhum resultado.</div>'; return; }
+    
+    if (!filtrados.length) { 
+        container.innerHTML = '<div class="sem-res">Nenhum resultado encontrado.</div>'; 
+        return; 
+    }
+
     container.innerHTML = filtrados.map(p => renderCard(p)).join('');
-    // Rebind events
-    container.querySelectorAll('.fav-btn').forEach(btn => {
-        btn.onclick = (e) => { e.stopPropagation(); toggleFavorito(btn.closest('.card')?.dataset.id); };
-    });
-    container.querySelectorAll('.chat-btn').forEach(btn => {
-        btn.onclick = (e) => { e.stopPropagation(); abrirChat(btn.closest('.card')?.dataset.id); };
-    });
+    afterRender();
 }
 
 async function toggleFavorito(prestadorId) {
     if (!prestadorId) return;
-    if (!currentUser) { mostrarToast('Faça login.'); return; }
+    if (!currentUser) return mostrarToast('Faça login para guardar favoritos.');
     if (!supabase) return;
+
     const exists = FAVORITOS.includes(prestadorId);
-    if (exists) {
-        await supabase.from('favoritos').delete().eq('user_id', currentUser.id).eq('prestador_id', prestadorId);
-        FAVORITOS = FAVORITOS.filter(id => id !== prestadorId);
-    } else {
-        await supabase.from('favoritos').insert([{ user_id: currentUser.id, prestador_id: prestadorId }]);
-        FAVORITOS.push(prestadorId);
+    try {
+        if (exists) {
+            await supabase.from('favoritos').delete().eq('user_id', currentUser.id).eq('prestador_id', prestadorId);
+            FAVORITOS = FAVORITOS.filter(id => id !== prestadorId);
+        } else {
+            await supabase.from('favoritos').insert([{ user_id: currentUser.id, prestador_id: prestadorId }]);
+            FAVORITOS.push(prestadorId);
+        }
+        
+        const badgeFav = document.getElementById('favBadge');
+        if (badgeFav) badgeFav.textContent = FAVORITOS.length;
+        renderizarConteudo();
+    } catch (e) {
+        console.error('Erro ao alternar favorito:', e);
     }
-    document.getElementById('favBadge').textContent = FAVORITOS.length;
-    renderizarConteudo();
 }
 
-function abrirModalGrito() {
-    document.getElementById('modalGrito').classList.add('open');
-}
-function fecharModalGrito() {
-    document.getElementById('modalGrito').classList.remove('open');
-}
+function abrirModalGrito() { document.getElementById('modalGrito')?.classList.add('open'); }
+function fecharModalGrito() { document.getElementById('modalGrito')?.classList.remove('open'); }
+
 async function criarGrito() {
-    const titulo = document.getElementById('gritoTitulo').value;
-    const desc = document.getElementById('gritoDescricao').value;
-    const cat = document.getElementById('gritoCategoria').value;
-    const mun = document.getElementById('gritoMunicipio').value;
-    if (!titulo || !desc || !cat || !mun) { mostrarToast('Preencha todos os campos.'); return; }
-    if (!supabase) return;
+    const titulo = document.getElementById('gritoTitulo')?.value.trim();
+    const desc = document.getElementById('gritoDescricao')?.value.trim();
+    const cat = document.getElementById('gritoCategoria')?.value;
+    const mun = document.getElementById('gritoMunicipio')?.value;
+
+    if (!titulo || !desc || !cat || !mun) return mostrarToast('Preencha todos os campos.');
+    if (!supabase || !currentUser) return mostrarToast('Sessão inválida.');
+
     try {
-        const { data } = await supabase.from('gritos').insert([{ cliente_id: currentUser.id, titulo, descricao: desc, categoria: cat, municipio: mun, status: 'ABERTO' }]).select().single();
+        const { data, error } = await supabase.from('gritos').insert([{
+            cliente_id: currentUser.id, 
+            titulo, 
+            descricao: desc, 
+            categoria: cat, 
+            municipio: mun, 
+            status: 'ABERTO' 
+        }]).select().single();
+
+        if (error) throw error;
+
         GRITOS.push(data);
-        document.getElementById('gritoBadge').textContent = GRITOS.filter(g => g.status === 'ABERTO').length;
+        const badgeGrito = document.getElementById('gritoBadge');
+        if (badgeGrito) badgeGrito.textContent = GRITOS.filter(g => g.status === 'ABERTO').length;
+        
         fecharModalGrito();
         renderizarConteudo();
-        mostrarToast('Grito publicado!');
+        mostrarToast('Grito publicado com sucesso!');
     } catch (e) {
-        mostrarToast('Erro ao publicar.');
+        mostrarToast('Erro ao publicar pedido.');
     }
 }
 
-function abrirModalRegistoPrestador() {
-    document.getElementById('modalRegistoPrestador').classList.add('open');
-}
-function fecharModalRegistoPrestador() {
-    document.getElementById('modalRegistoPrestador').classList.remove('open');
-}
+function abrirModalRegistoPrestador() { document.getElementById('modalRegistoPrestador')?.classList.add('open'); }
+function fecharModalRegistoPrestador() { document.getElementById('modalRegistoPrestador')?.classList.remove('open'); }
+
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('formRegistoPrestador');
     if (form) {
@@ -426,17 +526,33 @@ document.addEventListener('DOMContentLoaded', function() {
             const municipio = document.getElementById('regMunicipio').value;
             const telefone = document.getElementById('regTelefone').value;
             const descricao = document.getElementById('regDescricao').value;
-            const selfie = document.getElementById('regSelfie').files[0];
-            const bi = document.getElementById('regBI').files[0];
-            if (!selfie || !bi) { mostrarToast('Envie selfie e BI.'); return; }
+            const selfieFile = document.getElementById('regSelfie').files[0];
+            const biFile = document.getElementById('regBI').files[0];
+
+            if (!selfieFile || !biFile) return mostrarToast('Submeta a Selfie e a cópia do BI.');
+
+            const readFileAsBase64 = (file) => new Promise((res, rej) => {
+                const r = new FileReader();
+                r.onload = () => res(r.result);
+                r.onerror = rej;
+                r.readAsDataURL(file);
+            });
+
             try {
-                const selfieData = await new Promise(r => { const reader = new FileReader(); reader.onload = () => r(reader.result); reader.readAsDataURL(selfie); });
-                const biData = await new Promise(r => { const reader = new FileReader(); reader.onload = () => r(reader.result); reader.readAsDataURL(bi); });
-                await supabase.from('candidatos').insert([{ nome, profissao, categoria, municipio, telefone, descricao, selfie: selfieData, bi: biData, status: 'PENDENTE' }]);
+                const selfieData = await readFileAsBase64(selfieFile);
+                const biData = await readFileAsBase64(biFile);
+
+                const { error } = await supabase.from('candidatos').insert([{
+                    nome, profissao, categoria, municipio, telefone, descricao, 
+                    selfie: selfieData, bi: biData, status: 'PENDENTE' 
+                }]);
+
+                if (error) throw error;
+
                 fecharModalRegistoPrestador();
-                mostrarToast('Candidatura enviada! Aguarde aprovação.');
-            } catch (e) {
-                mostrarToast('Erro: ' + e.message);
+                mostrarToast('Candidatura enviada! Aguarde pela aprovação.');
+            } catch (err) {
+                mostrarToast('Erro ao submeter: ' + err.message);
             }
         });
     }
@@ -445,50 +561,74 @@ document.addEventListener('DOMContentLoaded', function() {
 let avaliarTarget = null;
 function abrirModalAvaliar(id, nome) {
     avaliarTarget = { id, nome };
-    document.getElementById('avaliarTarget').textContent = 'Avaliar ' + nome;
-    document.getElementById('modalAvaliar').classList.add('open');
+    const targetLabel = document.getElementById('avaliarTarget');
+    if (targetLabel) targetLabel.textContent = 'Avaliar ' + nome;
+    document.getElementById('modalAvaliar')?.classList.add('open');
 }
-function fecharModalAvaliar() {
-    document.getElementById('modalAvaliar').classList.remove('open');
-}
+function fecharModalAvaliar() { document.getElementById('modalAvaliar')?.classList.remove('open'); }
+
 async function enviarAvaliacao() {
-    if (!avaliarTarget) return;
+    if (!avaliarTarget || !currentUser) return;
     const nota = parseInt(document.getElementById('avaliarNota').value);
     const texto = document.getElementById('avaliarTexto').value.trim() || 'Sem comentário.';
+
     try {
-        await supabase.from('avaliacoes').insert([{ prestador_id: avaliarTarget.id, user_id: currentUser.id, nota, texto }]);
+        const { error } = await supabase.from('avaliacoes').insert([{ 
+            prestador_id: avaliarTarget.id, 
+            user_id: currentUser.id, 
+            nota, 
+            texto 
+        }]);
+
+        if (error) throw error;
+
         fecharModalAvaliar();
-        mostrarToast('Avaliação enviada!');
+        mostrarToast('Avaliação registada!');
+        await carregarDados();
         renderizarConteudo();
     } catch (e) {
         mostrarToast('Erro ao enviar avaliação.');
     }
 }
 
-function fecharModalDetalhes() {
-    document.getElementById('modalDetalhes').classList.remove('open');
-}
+function fecharModalDetalhes() { document.getElementById('modalDetalhes')?.classList.remove('open'); }
+
 function abrirModalDetalhes(id) {
     const p = PRESTADORES.find(x => x.id === id);
     if (!p) return;
+
     const container = document.getElementById('detalhesConteudo');
     if (!container) return;
-    const estrelas = '★'.repeat(Math.floor(p.avaliacao_media)) + (p.avaliacao_media % 1 >= 0.5 ? '½' : '');
-    const avaliacoesHtml = p.avaliacoes && p.avaliacoes.length > 0 ?
-        p.avaliacoes.map(a => `<div class="avaliacao-item"><div class="user">${a.user} ${'★'.repeat(Math.floor(a.nota))}</div><div class="texto">${a.texto}</div></div>`).join('') :
-        '<p style="color:var(--cinza-texto);font-size:13px;">Sem avaliações.</p>';
-    container.innerHTML = `<h2>${p.nome}</h2><div class="sub">${p.categorias?.join(' • ') || ''} • ${p.municipio}</div><div class="linha-detalhe"><span>⭐ Avaliação</span><span>${estrelas} ${p.avaliacao_media} (${p.total_avaliacoes})</span></div><div class="linha-detalhe"><span>💰 Preço</span><span>${p.preco_base > 0 ? p.preco_base+' Kz' : 'Sob consulta'}</span></div><div class="linha-detalhe"><span>📋 Sobre</span><span style="font-weight:400;">${p.descricao}</span></div><div style="margin:10px 0;font-weight:600;">💬 Avaliações</div>${avaliacoesHtml}<div class="avaliar-area"><button class="btn-acao" onclick="abrirModalAvaliar('${p.id}','${p.nome}')"><i class="fas fa-star"></i> Avaliar ${p.nome}</button></div><button class="btn-acao" onclick="abrirChat('${p.id}')"><i class="fas fa-comment-dots"></i> Falar com ${p.nome}</button><button class="btn-acao secundario" onclick="simularOrcamento('${p.id}')"><i class="fas fa-file-invoice"></i> Solicitar Orçamento</button>`;
-    document.getElementById('modalDetalhes').classList.add('open');
+
+    const notaNum = p.avaliacao_media || 0;
+    const estrelas = '★'.repeat(Math.floor(notaNum)) + (notaNum % 1 >= 0.5 ? '½' : '');
+    
+    const avaliacoesHtml = (p.avaliacoes && p.avaliacoes.length > 0) ?
+        p.avaliacoes.map(a => `<div class="avaliacao-item"><div class="user">${a.user || 'Cliente'} ${'★'.repeat(Math.floor(a.nota))}</div><div class="texto">${a.texto}</div></div>`).join('') :
+        '<p style="color:var(--cinza-texto, #888); font-size:13px;">Sem avaliações ainda.</p>';
+
+    container.innerHTML = `
+        <h2>${p.nome}</h2>
+        <div class="sub">${(p.categorias || [p.categoria]).join(' • ')} • ${p.municipio}</div>
+        <div class="linha-detalhe"><span>⭐ Avaliação</span><span>${estrelas} ${notaNum} (${p.total_avaliacoes || 0})</span></div>
+        <div class="linha-detalhe"><span>💰 Preço</span><span>${p.preco_base > 0 ? p.preco_base + ' Kz' : 'Sob consulta'}</span></div>
+        <div class="linha-detalhe"><span>📋 Sobre</span><span style="font-weight:400;">${p.descricao || 'Sem descrição.'}</span></div>
+        <div style="margin:14px 0 6px 0; font-weight:600;">💬 Avaliações</div>
+        ${avaliacoesHtml}
+        <div class="avaliar-area" style="margin-top:12px;">
+            <button class="btn-acao" onclick="abrirModalAvaliar('${p.id}','${p.nome}')"><i class="fas fa-star"></i> Avaliar ${p.nome}</button>
+        </div>
+        <button class="btn-acao" onclick="fecharModalDetalhes(); abrirChat('${p.id}')"><i class="fas fa-comment-dots"></i> Falar com ${p.nome}</button>
+        <button class="btn-acao secundario" onclick="simularOrcamento('${p.id}')"><i class="fas fa-file-invoice"></i> Solicitar Orçamento</button>`;
+
+    document.getElementById('modalDetalhes')?.classList.add('open');
 }
 
 function simularOrcamento(id) {
     const p = PRESTADORES.find(x => x.id === id);
-    if (!p) return;
-    mostrarToast(`Orçamento solicitado a ${p.nome}!`);
+    if (p) mostrarToast(`Pedido de orçamento enviado a ${p.nome}!`);
 }
 
-function initMap(prestadores) { /* placeholder, já que o mapa não é crítico */ }
-function obterLocalizacao() { /* placeholder */ }
 function afterRender() {
     document.querySelectorAll('.card').forEach(el => {
         el.onclick = (e) => {
@@ -502,15 +642,20 @@ function afterRender() {
 async function iniciarApp() {
     mostrarTela('main');
     await carregarDados();
+    
     if (DARK_MODE) {
         document.body.classList.add('dark-mode');
-        document.getElementById('darkIcon').className = 'fas fa-sun';
+        const icon = document.getElementById('darkIcon');
+        if (icon) icon.className = 'fas fa-sun';
     }
+    
     mudarTab('home');
     if (currentUser) conectarSocket();
 }
 
-// Expor funções globais
+// ============================================================
+//  EXPOSIÇÃO DE MÉTODOS GLOBAIS PARA O HTML
+// ============================================================
 window.handleLogin = handleLogin;
 window.handleRegister = handleRegister;
 window.logout = logout;
@@ -534,4 +679,4 @@ window.fecharModalRegistoPrestador = fecharModalRegistoPrestador;
 window.abrirModalAvaliar = abrirModalAvaliar;
 window.simularOrcamento = simularOrcamento;
 
-console.log('🚀 Huambo Plus app.js carregado.');
+console.log('🚀 Huambo Plus app.js carregado com sucesso.');
