@@ -4,22 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Huambo Plus — Marketplace Inteligente</title>
-    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkh1YW1ibyBQbHVzIiwKICAic2hvcnRfbmFtZSI6ICJIdWFtYm8rIiwKICAiZGVzY3JpcHRpb24iOiAiTWFya2V0cGxhY2UgaW50ZWxpZ2VudGUgZGEgcHJvdmluw6ljaWEgZG8gSHVhbWJvIiwKICAic3RhcnRfdXJsIjogIi8iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiMwZDZiMzQiLAogICJ0aGVtZV9jb2xvciI6ICIjMGQ2YjM0IiwKICAiaWNvbnMiOiBbCiAgICB7ICJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sLDxzdmcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJyB2aWV3Qm94PScwIDAgNTEyIDUxMic+PHJlY3Qgd2lkdGg9JzUxMicgaGVpZ2h0PSc1MTInIGZpbGw9JyMwZDZiMzQnLz48dGV4dCB4PScyNTYnIHk9JzI4MCcgZm9udC1zaXplPScyMDAnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGZvbnQtZmFtaWx5PSdzYW5zLXNlcmlmJyBmaWxsPSd3aGl0ZSc+SDwvdGV4dD48L3N2Zz4iLCAic2l6ZXMiOiAiMTkyeDE5MiIsICJ0eXBlIjogImltYWdlL3N2Zyt4bWwiIH0KICBdCn0=">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkh1YW1ibyBQbHVzIiwKICAic2hvcnRfbmFtZSI6ICJIdWFtYm8rIiwKICAic2lkZSI6ICJhdXRvIiwKICAic3RhcnRfdXJsIjogIi8iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiMwZDZiMzQiLAogICJ0aGVtZV9jb2xvciI6ICIjMGQ2YjM0Igp9">
     <meta name="theme-color" content="#0d6b34">
+
+    <!-- Fontes & Ícones -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Leaflet Maps -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Estilos da Aplicação -->
     <link rel="stylesheet" href="style.css">
+
+    <!-- Carregamento Seguro dos SDKs Globais antes da lógica principal -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
 </head>
 <body>
-    <!-- Toast -->
+    <!-- Notificações Toast -->
     <div id="toast" class="toast"></div>
 
-    <!-- SPLASH (agora sem 'active' – fica oculta) -->
-    <div id="splash" class="screen">
+    <!-- TELA 1: SPLASH (Tela de carregamento inicial) -->
+    <div id="splash" class="screen active">
         <div class="logo"><i class="fas fa-store-alt"></i></div>
         <h1>Huambo <span>Plus</span></h1>
         <p id="splashSlogan">MARKETPLACE • SERVIÇOS • NEGÓCIOS</p>
@@ -27,65 +39,188 @@
         <div class="loader"></div>
     </div>
 
-    <!-- LOGIN (agora com 'active' – é a primeira tela visível) -->
-    <div id="login" class="screen active">
+    <!-- TELA 2: LOGIN -->
+    <div id="login" class="screen">
         <div class="box">
             <div class="header">
                 <div class="icon"><i class="fas fa-store-alt"></i></div>
                 <h2 id="loginTitle">Huambo Plus</h2>
                 <p id="loginSub">O maior marketplace da província</p>
             </div>
+            
             <div class="login-tabs">
-                <button class="active" onclick="setLoginTipo('user')">Utilizador</button>
-                <button onclick="setLoginTipo('admin')">Administrador</button>
+                <button type="button" class="active" onclick="setLoginTipo('user')">Utilizador</button>
+                <button type="button" onclick="setLoginTipo('admin')">Administrador</button>
             </div>
+            
             <div id="loginFields">
-                <div class="campo"><i class="fas fa-envelope"></i><input type="email" id="loginEmail" placeholder="Email" value="admin@email.com"></div>
-                <div class="campo"><i class="fas fa-lock"></i><input type="password" id="loginPassword" placeholder="Palavra-passe" value="123"></div>
-                <div id="adminCodeField" style="display:none;" class="campo"><i class="fas fa-key"></i><input type="password" id="loginAdminCode" placeholder="Código Admin"></div>
+                <div class="campo">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" id="loginEmail" placeholder="Email" autocomplete="email">
+                </div>
+                <div class="campo">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="loginPassword" placeholder="Palavra-passe" autocomplete="current-password">
+                </div>
+                <div id="adminCodeField" style="display:none;" class="campo">
+                    <i class="fas fa-key"></i>
+                    <input type="password" id="loginAdminCode" placeholder="Código Admin">
+                </div>
             </div>
-            <button class="btn-login" onclick="handleLogin()"><i class="fas fa-arrow-right"></i> Entrar</button>
-            <button class="btn-register" onclick="handleRegister()"><i class="fas fa-user-plus"></i> Criar conta (demo)</button>
+
+            <button type="button" class="btn-login" onclick="handleLogin()"><i class="fas fa-arrow-right"></i> Entrar</button>
+            <button type="button" class="btn-register" onclick="handleRegister()"><i class="fas fa-user-plus"></i> Criar conta</button>
+            
             <div id="loginMsg" class="login-msg"></div>
-            <div class="demo-hint">Admin: admin@email.com / código: admin123</div>
         </div>
     </div>
 
-    <!-- MAIN -->
+    <!-- TELA 3: PRINCIPAL (MAIN) -->
     <div id="main" class="screen">
         <div class="app-header">
             <div class="logo"><i class="fas fa-store"></i> Huambo<span>Plus</span></div>
             <div class="header-actions">
                 <div class="idioma-selector">
-                    <button class="active" data-lang="pt" onclick="mudarIdioma('pt')">PT</button>
-                    <button data-lang="en" onclick="mudarIdioma('en')">EN</button>
-                    <button data-lang="umb" onclick="mudarIdioma('umb')">UMB</button>
+                    <button type="button" class="active" data-lang="pt" onclick="mudarIdioma('pt')">PT</button>
+                    <button type="button" data-lang="en" onclick="mudarIdioma('en')">EN</button>
+                    <button type="button" data-lang="umb" onclick="mudarIdioma('umb')">UMB</button>
                 </div>
-                <button class="icon-btn" onclick="toggleDarkMode()"><i class="fas fa-moon" id="darkIcon"></i></button>
-                <button class="icon-btn" onclick="mudarTab('busca')"><i class="fas fa-search"></i></button>
-                <button class="icon-btn" onclick="mudarTab('favoritos')"><i class="fas fa-heart"></i><span class="badge" id="favBadge">0</span></button>
-                <button class="icon-btn" onclick="mudarTab('perfil')"><i class="fas fa-user-circle"></i></button>
+                <button type="button" class="icon-btn" onclick="toggleDarkMode()"><i class="fas fa-moon" id="darkIcon"></i></button>
+                <button type="button" class="icon-btn" onclick="mudarTab('busca')"><i class="fas fa-search"></i></button>
+                <button type="button" class="icon-btn" onclick="mudarTab('favoritos')">
+                    <i class="fas fa-heart"></i>
+                    <span class="badge" id="favBadge">0</span>
+                </button>
+                <button type="button" class="icon-btn" onclick="mudarTab('perfil')"><i class="fas fa-user-circle"></i></button>
             </div>
         </div>
+
+        <!-- Conteúdo dinâmico renderizado pelo JS -->
         <div id="mainContent" class="content"></div>
+
+        <!-- Navegação Inferior -->
         <div class="bottom-nav">
-            <button class="nav-item active" data-tab="home" onclick="mudarTab('home')"><i class="fas fa-home"></i><span>Início</span></button>
-            <button class="nav-item" data-tab="busca" onclick="mudarTab('busca')"><i class="fas fa-search"></i><span>Buscar</span></button>
-            <button class="nav-item" data-tab="gritos" onclick="mudarTab('gritos')"><i class="fas fa-bullhorn"></i><span>Gritos</span><span class="badge" id="gritoBadge">0</span></button>
-            <button class="nav-item" data-tab="central" onclick="mudarTab('central')"><i class="fas fa-briefcase"></i><span>Central</span></button>
-            <button class="nav-item" data-tab="perfil" onclick="mudarTab('perfil')"><i class="fas fa-user"></i><span>Perfil</span></button>
+            <button type="button" class="nav-item active" data-tab="home" onclick="mudarTab('home')"><i class="fas fa-home"></i><span>Início</span></button>
+            <button type="button" class="nav-item" data-tab="busca" onclick="mudarTab('busca')"><i class="fas fa-search"></i><span>Buscar</span></button>
+            <button type="button" class="nav-item" data-tab="gritos" onclick="mudarTab('gritos')"><i class="fas fa-bullhorn"></i><span>Gritos</span><span class="badge" id="gritoBadge">0</span></button>
+            <button type="button" class="nav-item" data-tab="central" onclick="mudarTab('central')"><i class="fas fa-briefcase"></i><span>Central</span></button>
+            <button type="button" class="nav-item" data-tab="perfil" onclick="mudarTab('perfil')"><i class="fas fa-user"></i><span>Perfil</span></button>
         </div>
     </div>
 
-    <!-- MODAIS -->
-    <div id="modalDetalhes" class="modal-overlay"><div class="modal-box"><button class="close" onclick="fecharModalDetalhes()">&times;</button><div id="detalhesConteudo"></div></div></div>
-    <div id="modalGrito" class="modal-overlay"><div class="modal-box"><h2><i class="fas fa-bullhorn" style="color:var(--laranja)"></i> Novo Grito</h2><input type="text" id="gritoTitulo" placeholder="Título" style="width:100%;padding:14px;border:1.5px solid var(--cinza-claro);border-radius:14px;margin:10px 0;"><textarea id="gritoDescricao" rows="3" placeholder="Descrição" style="width:100%;padding:14px;border:1.5px solid var(--cinza-claro);border-radius:14px;margin-bottom:10px;"></textarea><input type="text" id="gritoCategoria" placeholder="Categoria" style="width:100%;padding:14px;border:1.5px solid var(--cinza-claro);border-radius:14px;margin-bottom:10px;"><input type="text" id="gritoMunicipio" placeholder="Município" style="width:100%;padding:14px;border:1.5px solid var(--cinza-claro);border-radius:14px;margin-bottom:10px;"><div style="display:flex;gap:10px;"><button class="btn-cancel" onclick="fecharModalGrito()" style="flex:1;padding:14px;background:var(--cinza-claro);border:none;border-radius:14px;font-weight:600;">Cancelar</button><button class="btn-save" onclick="criarGrito()" style="flex:1;padding:14px;background:var(--laranja);color:#fff;border:none;border-radius:14px;font-weight:700;">Publicar</button></div></div></div>
-    <div id="modalAvaliar" class="modal-overlay"><div class="modal-box"><h2><i class="fas fa-star" style="color:var(--dourado)"></i> Avaliar</h2><p id="avaliarTarget" style="color:var(--cinza-texto);margin-bottom:8px;"></p><select id="avaliarNota" style="width:100%;padding:10px;border:1.5px solid var(--cinza-claro);border-radius:14px;margin-bottom:8px;"><option value="5">★★★★★</option><option value="4">★★★★☆</option><option value="3">★★★☆☆</option><option value="2">★★☆☆☆</option><option value="1">★☆☆☆☆</option></select><textarea id="avaliarTexto" placeholder="Comentário" style="width:100%;padding:10px;border:1.5px solid var(--cinza-claro);border-radius:14px;margin-bottom:8px;"></textarea><button onclick="enviarAvaliacao()" style="width:100%;padding:12px;background:var(--dourado);color:#fff;border:none;border-radius:16px;font-weight:700;">Enviar</button><button onclick="fecharModalAvaliar()" style="width:100%;padding:10px;background:transparent;border:none;color:var(--cinza-texto);cursor:pointer;margin-top:6px;">Cancelar</button></div></div>
-    <div id="modalChat" class="modal-overlay"><div class="modal-box"><button class="close" onclick="fecharModalChat()">&times;</button><h2><i class="fas fa-comment-dots" style="color:var(--azul)"></i> <span id="chatTitulo">Chat</span></h2><div id="chatContainer" class="chat-container"></div><div class="chat-input"><input type="text" id="chatInput" placeholder="Escreva uma mensagem..."><button onclick="enviarMensagemChat()"><i class="fas fa-paper-plane"></i></button></div></div></div>
-    <div id="modalRegistoPrestador" class="modal-overlay"><div class="modal-box"><button class="close" onclick="fecharModalRegistoPrestador()">&times;</button><h2><i class="fas fa-user-tie" style="color:var(--verde)"></i> Registar Prestador</h2><form id="formRegistoPrestador"><div class="form-group"><label>Nome</label><input type="text" id="regNome" required></div><div class="form-group"><label>Profissão</label><input type="text" id="regProfissao" required></div><div class="form-group"><label>Categoria</label><select id="regCategoria"><option value="Saúde">Saúde</option><option value="Construção">Construção</option><option value="Educação">Educação</option><option value="Tecnologia">Tecnologia</option><option value="Serviços">Serviços</option><option value="Beleza">Beleza</option></select></div><div class="form-group"><label>Município</label><select id="regMunicipio"><option value="Huambo">Huambo</option><option value="Caála">Caála</option><option value="Bailundo">Bailundo</option></select></div><div class="form-group"><label>Telefone</label><input type="tel" id="regTelefone" required></div><div class="form-group"><label>Descrição</label><textarea id="regDescricao"></textarea></div><div class="form-group"><label>Selfie</label><input type="file" id="regSelfie" accept="image/*" required></div><div class="form-group"><label>BI</label><input type="file" id="regBI" accept="image/*" required></div><button type="submit" class="btn-submit">Enviar</button></form></div></div>
+    <!-- ================= MODAIS ================= -->
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-    <script src="/socket.io/socket.io.js"></script>
+    <!-- Modal: Detalhes do Prestador -->
+    <div id="modalDetalhes" class="modal-overlay">
+        <div class="modal-box">
+            <button type="button" class="close" onclick="fecharModalDetalhes()">&times;</button>
+            <div id="detalhesConteudo"></div>
+        </div>
+    </div>
+
+    <!-- Modal: Novo Grito -->
+    <div id="modalGrito" class="modal-overlay">
+        <div class="modal-box">
+            <h2><i class="fas fa-bullhorn" style="color:var(--laranja)"></i> Novo Grito</h2>
+            <input type="text" id="gritoTitulo" placeholder="Título do Pedido" style="width:100%;padding:14px;border:1.5px solid var(--cinza-claro);border-radius:14px;margin:10px 0;">
+            <textarea id="gritoDescricao" rows="3" placeholder="Descreva o serviço que necessita..." style="width:100%;padding:14px;border:1.5px solid var(--cinza-claro);border-radius:14px;margin-bottom:10px;"></textarea>
+            <input type="text" id="gritoCategoria" placeholder="Categoria (ex: Eletricista)" style="width:100%;padding:14px;border:1.5px solid var(--cinza-claro);border-radius:14px;margin-bottom:10px;">
+            <input type="text" id="gritoMunicipio" placeholder="Município (ex: Huambo)" style="width:100%;padding:14px;border:1.5px solid var(--cinza-claro);border-radius:14px;margin-bottom:10px;">
+            <div style="display:flex;gap:10px;">
+                <button type="button" class="btn-cancel" onclick="fecharModalGrito()" style="flex:1;padding:14px;background:var(--cinza-claro);border:none;border-radius:14px;font-weight:600;cursor:pointer;">Cancelar</button>
+                <button type="button" class="btn-save" onclick="criarGrito()" style="flex:1;padding:14px;background:var(--laranja);color:#fff;border:none;border-radius:14px;font-weight:700;cursor:pointer;">Publicar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Avaliar -->
+    <div id="modalAvaliar" class="modal-overlay">
+        <div class="modal-box">
+            <h2><i class="fas fa-star" style="color:var(--dourado)"></i> Avaliar</h2>
+            <p id="avaliarTarget" style="color:var(--cinza-texto);margin-bottom:8px;"></p>
+            <select id="avaliarNota" style="width:100%;padding:10px;border:1.5px solid var(--cinza-claro);border-radius:14px;margin-bottom:8px;">
+                <option value="5">★★★★★ (5/5)</option>
+                <option value="4">★★★★☆ (4/5)</option>
+                <option value="3">★★★☆☆ (3/5)</option>
+                <option value="2">★★☆☆☆ (2/5)</option>
+                <option value="1">★☆☆☆☆ (1/5)</option>
+            </select>
+            <textarea id="avaliarTexto" placeholder="Deixe o seu comentário..." style="width:100%;padding:10px;border:1.5px solid var(--cinza-claro);border-radius:14px;margin-bottom:8px;"></textarea>
+            <button type="button" onclick="enviarAvaliacao()" style="width:100%;padding:12px;background:var(--dourado);color:#fff;border:none;border-radius:16px;font-weight:700;cursor:pointer;">Enviar Avaliação</button>
+            <button type="button" onclick="fecharModalAvaliar()" style="width:100%;padding:10px;background:transparent;border:none;color:var(--cinza-texto);cursor:pointer;margin-top:6px;">Cancelar</button>
+        </div>
+    </div>
+
+    <!-- Modal: Chat -->
+    <div id="modalChat" class="modal-overlay">
+        <div class="modal-box">
+            <button type="button" class="close" onclick="fecharModalChat()">&times;</button>
+            <h2><i class="fas fa-comment-dots" style="color:var(--azul)"></i> <span id="chatTitulo">Chat</span></h2>
+            <div id="chatContainer" class="chat-container"></div>
+            <div class="chat-input">
+                <input type="text" id="chatInput" placeholder="Escreva uma mensagem...">
+                <button type="button" onclick="enviarMensagemChat()"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Registo de Prestador -->
+    <div id="modalRegistoPrestador" class="modal-overlay">
+        <div class="modal-box">
+            <button type="button" class="close" onclick="fecharModalRegistoPrestador()">&times;</button>
+            <h2><i class="fas fa-user-tie" style="color:var(--verde)"></i> Registar Prestador</h2>
+            <form id="formRegistoPrestador">
+                <div class="form-group">
+                    <label>Nome Completo</label>
+                    <input type="text" id="regNome" required>
+                </div>
+                <div class="form-group">
+                    <label>Profissão / Título</label>
+                    <input type="text" id="regProfissao" required>
+                </div>
+                <div class="form-group">
+                    <label>Categoria</label>
+                    <select id="regCategoria">
+                        <option value="Saúde">Saúde</option>
+                        <option value="Construção">Construção</option>
+                        <option value="Educação">Educação</option>
+                        <option value="Tecnologia">Tecnologia</option>
+                        <option value="Serviços">Serviços</option>
+                        <option value="Beleza">Beleza</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Município</label>
+                    <select id="regMunicipio">
+                        <option value="Huambo">Huambo</option>
+                        <option value="Caála">Caála</option>
+                        <option value="Bailundo">Bailundo</option>
+                        <option value="Ekunha">Ekunha</option>
+                        <option value="Ukuma">Ukuma</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Telefone</label>
+                    <input type="tel" id="regTelefone" required>
+                </div>
+                <div class="form-group">
+                    <label>Descrição dos Serviços</label>
+                    <textarea id="regDescricao" rows="2"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Foto de Rosto (Selfie)</label>
+                    <input type="file" id="regSelfie" accept="image/*" required>
+                </div>
+                <div class="form-group">
+                    <label>Cópia do BI</label>
+                    <input type="file" id="regBI" accept="image/*" required>
+                </div>
+                <button type="submit" class="btn-submit">Enviar Candidatura</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Script Principal da Aplicação -->
     <script src="app.js"></script>
 </body>
 </html>
