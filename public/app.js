@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const providerPanel = document.getElementById('providerPanel');
     const adminPanel = document.getElementById('adminPanel');
 
+    // Mostrar ou ocultar campos de documentos se for prestador
     userRoleSelect.addEventListener('change', (e) => {
         if (e.target.value === 'provider') {
             providerFields.classList.remove('hidden');
@@ -22,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Lógica de Registo de Nova Conta
     signupBtn.addEventListener('click', async () => {
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
@@ -81,10 +83,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (error) {
             alert('Erro no registo: ' + error.message);
         } else {
-            alert('Conta criada com sucesso! Faça login.');
+            alert('Conta criada com sucesso! Faça login para aceder.');
         }
     });
 
+    // Lógica de Login
     loginBtn.addEventListener('click', async () => {
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
@@ -106,10 +109,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Direcionar para o painel correspondente ao papel do utilizador
     function verificarSessaoEredirecionar(user) {
         authSection.classList.add('hidden');
         
-        // Forçar painel de admin se o e-mail for o do administrador ou se o papel for admin
         const role = user.user_metadata ? user.user_metadata.role : 'client';
         const email = user.email || '';
 
@@ -122,6 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Terminar Sessão em qualquer painel
     ['logoutClient', 'logoutProvider', 'logoutAdmin'].forEach(id => {
         const btn = document.getElementById(id);
         if (btn) {
