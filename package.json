@@ -1,7 +1,7 @@
 {
   "name": "huambo-plus-backend",
   "version": "1.0.0",
-  "description": "Huambo Plus Backend",
+  "description": "Huambo Plus Web Application",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
