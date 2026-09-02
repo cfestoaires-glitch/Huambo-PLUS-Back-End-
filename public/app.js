@@ -1,5 +1,3 @@
-
-// Configuração oficial do Supabase para o Huambo Plus
 const SUPABASE_URL = 'https://vpukkvxnlwyhoqpgckzh.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_XawUI3JjNpCjETe4tEAXwQ_QkgkVlul';
 
@@ -16,7 +14,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const providerPanel = document.getElementById('providerPanel');
     const adminPanel = document.getElementById('adminPanel');
 
-    // Mostrar/ocultar campos de documentos conforme o papel escolhido
     userRoleSelect.addEventListener('change', (e) => {
         if (e.target.value === 'provider') {
             providerFields.classList.remove('hidden');
@@ -25,7 +22,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Lógica de Criar Conta (Registo)
     signupBtn.addEventListener('click', async () => {
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
@@ -39,7 +35,6 @@ document.addEventListener('DOMContentLoaded', () => {
         let selfieUrl = '';
         let biUrl = '';
 
-        // Se for prestador, fazer upload da Selfie e do BI para o bucket correto
         if (role === 'provider') {
             const selfieInput = document.getElementById('selfieFile');
             const biInput = document.getElementById('biFile');
@@ -56,12 +51,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const selfiePath = `documents/selfie_${Date.now()}_${selfieFile.name}`;
                 const biPath = `documents/bi_${Date.now()}_${biFile.name}`;
 
-                // Upload Selfie usando o bucket correto 'documentos-prestadores'
                 const uploadSelfie = await supabaseClient.storage.from('documentos-prestadores').upload(selfiePath, selfieFile);
                 if (uploadSelfie.error) throw uploadSelfie.error;
                 selfieUrl = uploadSelfie.data.path;
 
-                // Upload BI usando o bucket correto 'documentos-prestadores'
                 const uploadBi = await supabaseClient.storage.from('documentos-prestadores').upload(biPath, biFile);
                 if (uploadBi.error) throw uploadBi.error;
                 biUrl = uploadBi.data.path;
@@ -72,7 +65,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Criar utilizador no Auth do Supabase guardando o papel e metadados
         const { data, error } = await supabaseClient.auth.signUp({
             email,
             password,
@@ -89,11 +81,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (error) {
             alert('Erro no registo: ' + error.message);
         } else {
-            alert('Conta criada com sucesso! Verifique os dados e faça login.');
+            alert('Conta criada com sucesso! Faça login.');
         }
     });
 
-    // Lógica de Login
     loginBtn.addEventListener('click', async () => {
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
@@ -115,21 +106,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Direcionar utilizador para o painel correto consoante o seu papel
     function verificarSessaoEredirecionar(user) {
         authSection.classList.add('hidden');
+        
+        // Forçar painel de admin se o e-mail for o do administrador ou se o papel for admin
         const role = user.user_metadata ? user.user_metadata.role : 'client';
+        const email = user.email || '';
 
-        if (role === 'client') {
-            clientPanel.classList.remove('hidden');
+        if (role === 'admin' || email.includes('admin')) {
+            adminPanel.classList.remove('hidden');
         } else if (role === 'provider') {
             providerPanel.classList.remove('hidden');
-        } else if (role === 'admin') {
-            adminPanel.classList.remove('hidden');
+        } else {
+            clientPanel.classList.remove('hidden');
         }
     }
 
-    // Botões de Terminar Sessão
     ['logoutClient', 'logoutProvider', 'logoutAdmin'].forEach(id => {
         const btn = document.getElementById(id);
         if (btn) {
