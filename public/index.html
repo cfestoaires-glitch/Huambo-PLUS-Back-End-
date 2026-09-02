@@ -4,85 +4,95 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Huambo Plus - Plataforma de Serviços</title>
-    <!-- Supabase SDK -->
+    <!-- Supabase JS Client UMD -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f4f4f9; color: #333; }
-        .container { max-width: 650px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        h1 { color: #007bff; text-align: center; margin-bottom: 5px; }
-        .subtitle { text-align: center; color: #666; margin-bottom: 20px; }
-        .section { margin-top: 20px; padding: 20px; border: 1px solid #e1e1e1; border-radius: 6px; background: #fafafa; }
-        input, select, button { width: 100%; padding: 12px; margin-top: 12px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
-        button { background: #007bff; color: white; border: none; font-weight: bold; cursor: pointer; }
-        button:hover { background: #0056b3; }
-        .btn-success { background: #28a745; }
-        .btn-success:hover { background: #218838; }
-        .hidden { display: none; }
-        .file-group { margin-top: 12px; text-align: left; }
-        .file-group label { display: block; font-size: 13px; color: #555; margin-bottom: 4px; font-weight: bold; }
+        body { font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
+        h1, h2 { color: #1e3a8a; text-align: center; }
+        p { color: #6b7280; text-align: center; font-size: 14px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #374151; font-size: 14px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-primary { background-color: #2563eb; color: white; }
+        .btn-primary:hover { background-color: #1d4ed8; }
+        .btn-success { background-color: #16a34a; color: white; }
+        .btn-success:hover { background-color: #15803d; }
+        .btn-danger { background-color: #dc2626; color: white; }
+        .btn-danger:hover { background-color: #b91c1c; }
+        .hidden { display: none !important; }
+        .panel { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 600px; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Huambo Plus</h1>
-        <p class="subtitle">Conectando Clientes e Prestadores de Serviços</p>
 
-        <!-- SECÇÃO DE AUTENTICAÇÃO -->
-        <div id="authSection" class="section">
-            <h3>Aceder / Registar na Plataforma</h3>
+    <!-- Secção de Autenticação / Registo -->
+    <div id="authSection" class="card">
+        <h1>Huambo Plus</h1>
+        <p>Conectando Clientes e Prestadores de Serviços</p>
+        
+        <div class="form-group" style="margin-top: 20px;">
+            <label for="userRole">Tipo de Utilizador:</label>
             <select id="userRole">
-                <option value="client">Cliente (Procurar Serviços)</option>
-                <option value="provider">Prestador de Serviços (Requer Aprovação)</option>
+                <option value="client">Cliente</option>
+                <option value="provider">Prestador de Serviços</option>
                 <option value="admin">Administrador</option>
             </select>
-            
-            <input type="email" id="email" placeholder="O seu e-mail">
-            <input type="password" id="password" placeholder="A sua palavra-passe">
+        </div>
 
-            <!-- Campos específicos para Prestadores (Selfie e BI) -->
-            <div id="providerFields" class="hidden">
-                <div class="file-group">
-                    <label>Fotografia (Selfie):</label>
-                    <input type="file" id="selfieFile" accept="image/*">
-                </div>
-                <div class="file-group">
-                    <label>Documento de Identificação (BI):</label>
-                    <input type="file" id="biFile" accept="image/*">
-                </div>
+        <div class="form-group">
+            <label for="email">E-mail:</label>
+            <input type="email" id="email" placeholder="exemplo@email.com">
+        </div>
+
+        <div class="form-group">
+            <label for="password">Palavra-passe:</label>
+            <input type="password" id="password" placeholder="••••••••">
+        </div>
+
+        <!-- Campos específicos para Prestadores (Selfie e BI) -->
+        <div id="providerFields" class="hidden" style="background: #f9fafb; padding: 15px; border-radius: 6px; margin-bottom: 15px; border: 1px dashed #cbd5e1;">
+            <p style="text-align: left; font-weight: bold; color: #1f2937; margin-top: 0;">Validação de Identidade (Prestador)</p>
+            <div class="form-group">
+                <label for="selfieFile">Fotografia (Selfie):</label>
+                <input type="file" id="selfieFile" accept="image/*">
             </div>
-
-            <button id="loginBtn">Entrar na Conta</button>
-            <button id="signupBtn" class="btn-success">Criar Nova Conta</button>
-        </div>
-
-        <!-- PAINEL DO CLIENTE -->
-        <div id="clientPanel" class="section hidden">
-            <h2>Painel do Cliente</h2>
-            <p>Bem-vindo! Explore os prestadores de serviços disponíveis em Huambo.</p>
-            <div id="servicesList">Carregando serviços disponíveis...</div>
-            <button id="logoutClient" style="background: #dc3545; margin-top: 20px;">Terminar Sessão</button>
-        </div>
-
-        <!-- PAINEL DO PRESTADOR -->
-        <div id="providerPanel" class="section hidden">
-            <h2>Painel do Prestador de Serviços</h2>
-            <div id="providerStatusMsg" style="padding: 10px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 4px; margin-bottom: 15px;">
-                O seu perfil está <strong>Pendente</strong> de aprovação pelo Administrador.
+            <div class="form-group">
+                <label for="biFile">Documento de Identificação (BI):</label>
+                <input type="file" id="biFile" accept="image/*">
             </div>
-            <p>Assim que o administrador validar a sua Selfie e o seu BI, o seu perfil ficará ativo para receber clientes.</p>
-            <button id="logoutProvider" style="background: #dc3545; margin-top: 20px;">Terminar Sessão</button>
         </div>
 
-        <!-- PAINEL DO ADMINISTRADOR -->
-        <div id="adminPanel" class="section hidden">
-            <h2>Painel do Administrador</h2>
-            <p>Gerencie as aprovações de novos prestadores de serviços.</p>
-            <div id="pendingProvidersList">A carregar prestadores pendentes...</div>
-            <button id="logoutAdmin" style="background: #dc3545; margin-top: 20px;">Terminar Sessão</button>
-        </div>
+        <button id="loginBtn" class="btn-primary">Entrar na Conta</button>
+        <button id="signupBtn" class="btn-success">Criar Nova Conta</button>
     </div>
 
+    <!-- Painel do Cliente -->
+    <div id="clientPanel" class="panel hidden">
+        <h2>Painel do Cliente</h2>
+        <p>Bem-vindo à sua área de cliente no Huambo Plus.</p>
+        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #e5e7eb;">
+        <button id="logoutClient" class="btn-danger">Terminar Sessão</button>
+    </div>
+
+    <!-- Painel do Prestador -->
+    <div id="providerPanel" class="panel hidden">
+        <h2>Painel do Prestador de Serviços</h2>
+        <p>Os seus documentos foram submetidos e encontram-se em análise pela administração.</p>
+        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #e5e7eb;">
+        <button id="logoutProvider" class="btn-danger">Terminar Sessão</button>
+    </div>
+
+    <!-- Painel do Administrador -->
+    <div id="adminPanel" class="panel hidden">
+        <h2>Painel do Administrador</h2>
+        <p>Gestão global de utilizadores, validação de prestadores e moderação da plataforma.</p>
+        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #e5e7eb;">
+        <button id="logoutAdmin" class="btn-danger">Terminar Sessão</button>
+    </div>
+
+    <!-- Script Principal -->
     <script src="app.js"></script>
 </body>
 </html>
-
