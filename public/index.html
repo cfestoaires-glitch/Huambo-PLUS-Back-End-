@@ -1,1 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Huambo Plus</title>
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f4f4f9; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1 { color: #007bff; text-align: center; }
+        .role-section { margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        input, select, button { width: 100%; padding: 10px; margin-top: 10px; box-sizing: border-box; }
+        button { background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Huambo Plus</h1>
+        <p style="text-align: center;">Plataforma de Serviços</p>
+
+        <div class="role-section">
+            <h3>Aceder / Registar</h3>
+            <select id="userRole">
+                <option value="client">Cliente</option>
+                <option value="provider">Prestador de Serviços</option>
+                <option value="admin">Administrador</option>
+            </select>
+            <input type="email" id="email" placeholder="O seu e-mail">
+            <input type="password" id="password" placeholder="A sua palavra-passe">
+            <button id="loginBtn">Entrar</button>
+            <button id="signupBtn" style="background: #28a745; margin-top: 5px;">Criar Conta</button>
+        </div>
+
+        <div class="role-section" id="uploadSection" style="display:none;">
+            <h3>Upload de Imagem</h3>
+            <input type="file" id="imageFile" accept="image/*">
+            <button id="uploadBtn">Enviar Imagem para o Supabase</button>
+            <p id="uploadStatus"></p>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
 
