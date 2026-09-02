@@ -4,10 +4,9 @@ const app = express();
 
 const PORT = process.env.PORT || 3000;
 
-// Expõe a pasta public para o Render servir o frontend
+// Serve os ficheiros estáticos da pasta public
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.listen(PORT, () => {
     console.log(`Servidor a correr na porta ${PORT}`);
 });
-
